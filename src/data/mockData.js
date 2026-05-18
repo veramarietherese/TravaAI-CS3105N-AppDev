@@ -1,37 +1,59 @@
-export const trips = [
-    {
-      id: 1,
-      title: "Japan Trip",
-      location: "Tokyo, Japan",
-      date: "Mar 10 – Mar 18, 2026",
-      budget: 80000,
-      spent: 32450,
-      people: ["D", "M", "A", "+2"],
-      image:
-        "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=1200&auto=format&fit=crop",
-    },
-  ]
+export const trip = {
+    title: "Japan Trip",
+    date: "Mar 10 – Mar 18, 2026",
+    spent: 32450,
+    budget: 80000,
+    image:
+      "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=80&w=1400&auto=format&fit=crop",
+    people: ["🧑🏻", "👩🏻", "👩🏻", "+2"],
+  }
   
   export const quickActions = [
-    { label: "Create\nNew Trip", icon: "＋", tone: "blue" },
-    { label: "Explore", icon: "⌖", tone: "green" },
-    { label: "Budget", icon: "▣", tone: "orange" },
-    { label: "Invite\nFriends", icon: "♟", tone: "indigo" },
-  ]
-  
-  export const discoverTrips = [
     {
-      id: 1,
-      title: "Bali Escape",
-      location: "Bali, Indonesia",
-      image:
-        "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=900&auto=format&fit=crop",
+      title: "Create\nNew Trip",
+      image: "/src/assets/luggage.png",
+      className: "lavender",
     },
     {
-      id: 2,
-      title: "Seoul Weekend",
-      location: "Seoul, South Korea",
+      title: "Explore\nDestinations",
+      image: "/src/assets/globe.png",
+      className: "pink",
+    },
+    {
+      title: "Budget\nPlanner",
+      image: "/src/assets/wallet.png",
+      className: "softblue",
+    },
+    {
+      title: "Invite\nFriends",
+      image: "/src/assets/invite.png",
+      className: "lavender",
+    },
+  ]
+  
+  export const discoverPlaces = [
+    {
+      city: "Bali, Indonesia",
+      subtitle: "Popular getaway",
       image:
-        "https://images.unsplash.com/photo-1538485399081-7191377e8241?w=900&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1537996194471-e657df975ab4?q=80&w=900&auto=format&fit=crop",
+    },
+    {
+      city: "Seoul, Korea",
+      subtitle: "Urban adventure",
+      image:
+        "https://images.unsplash.com/photo-1538485399081-7191377e8241?q=80&w=900&auto=format&fit=crop",
+    },
+    {
+      city: "Paris, France",
+      subtitle: "City of love",
+      image:
+        "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=900&auto=format&fit=crop",
+    },
+    {
+      city: "Phuket, Thailand",
+      subtitle: "Beach paradise",
+      image:
+        "https://images.unsplash.com/photo-1589394815804-964ed0be2eb5?q=80&w=900&auto=format&fit=crop",
     },
   ]
