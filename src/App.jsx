@@ -1,99 +1,131 @@
-import { CalendarDays, Home, Map, Plus, ReceiptText, UserRound } from "lucide-react"
-import { trips } from "./data/mockData"
+import {
+  Bell,
+  Briefcase,
+  Home,
+  PieChart,
+  Plus,
+  UserRound,
+  ChevronRight,
+  CalendarDays,
+} from "lucide-react"
+import { trips, quickActions, discoverTrips } from "./data/mockData"
 import "./index.css"
 
 export default function App() {
+  const trip = trips[0]
+  const progress = Math.round((trip.spent / trip.budget) * 100)
+
   return (
     <main className="app-shell">
       <section className="phone-frame">
-        <header className="topbar">
-          <div>
-            <p className="eyebrow">Good evening, Dhan</p>
-            <h1>Plan smarter trips.</h1>
-          </div>
-          <button className="avatar">D</button>
-        </header>
+        <div className="screen-scroll">
+          <header className="home-header">
+            <div className="avatar-img">🧑🏻</div>
 
-        <section className="hero-card">
-          <div>
-            <p className="hero-label">Group travel made simple</p>
-            <h2>Itinerary, budget, and expenses in one place.</h2>
-            <button className="primary-btn">
-              <Plus size={18} />
-              Create trip
+            <div className="greeting">
+              <p>Hey, Dhan! 👋</p>
+              <h1>Where to next?</h1>
+            </div>
+
+            <button className="notif-btn">
+              <Bell size={24} />
+              <span />
             </button>
-          </div>
-        </section>
+          </header>
 
-        <section className="section-head">
-          <h3>Upcoming trips</h3>
-          <button>See all</button>
-        </section>
+          <section className="section-row">
+            <h2>Upcoming Trips</h2>
+            <button>
+              View all <ChevronRight size={18} />
+            </button>
+          </section>
 
-        <section className="trip-list">
-          {trips.map((trip) => {
-            const progress = Math.round((trip.spent / trip.budget) * 100)
+          <article className="featured-trip">
+            <div className="trip-image" style={{ backgroundImage: `url(${trip.image})` }}>
+              <div className="trip-overlay">
+                <h3>{trip.title}</h3>
 
-            return (
-              <article className="trip-card" key={trip.id}>
-                <img src={trip.image} alt={trip.title} />
-                <div className="trip-content">
-                  <div className="trip-meta">
-                    <span>{trip.status}</span>
-                    <span>{progress}% used</span>
-                  </div>
+                <p>
+                  <CalendarDays size={18} />
+                  {trip.date}
+                </p>
 
-                  <h4>{trip.title}</h4>
-                  <p>{trip.location}</p>
-
-                  <div className="trip-info">
-                    <span>
-                      <CalendarDays size={15} />
-                      {trip.date}
-                    </span>
-                  </div>
-
-                  <div className="progress-track">
-                    <div style={{ width: `${progress}%` }} />
-                  </div>
-
-                  <div className="trip-bottom">
-                    <div>
-                      <small>Budget</small>
-                      <strong>₱{trip.budget.toLocaleString()}</strong>
-                    </div>
-
-                    <div className="people">
-                      {trip.people.map((person) => (
-                        <span key={person}>{person}</span>
-                      ))}
-                    </div>
-                  </div>
+                <div className="avatar-stack">
+                  {trip.people.map((person) => (
+                    <span key={person}>{person}</span>
+                  ))}
                 </div>
-              </article>
-            )
-          })}
-        </section>
+              </div>
+            </div>
+
+            <div className="budget-box">
+              <div>
+                <p>Budget used</p>
+                <strong>
+                  ₱{trip.spent.toLocaleString()} / ₱{trip.budget.toLocaleString()}
+                </strong>
+              </div>
+
+              <div className="budget-track">
+                <span style={{ width: `${progress}%` }} />
+              </div>
+            </div>
+          </article>
+
+          <section className="quick-section">
+            <h2>Quick Actions</h2>
+
+            <div className="quick-grid">
+              {quickActions.map((action) => (
+                <button className="quick-card" key={action.label}>
+                  <span className={`quick-icon ${action.tone}`}>{action.icon}</span>
+                  <p>{action.label}</p>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="discover-section">
+            <div className="section-row compact">
+              <h2>Discover</h2>
+              <button>
+                Search <ChevronRight size={18} />
+              </button>
+            </div>
+
+            <div className="discover-list">
+              {discoverTrips.map((item) => (
+                <article className="discover-card" key={item.id}>
+                  <img src={item.image} alt={item.title} />
+                  <div>
+                    <h3>{item.title}</h3>
+                    <p>{item.location}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        </div>
 
         <nav className="bottom-nav">
           <button className="active">
-            <Home size={20} />
-            Home
+            <Home size={22} />
+            <span>Home</span>
           </button>
+
           <button>
-            <Map size={20} />
-            Map
+            <Briefcase size={22} />
+            <span>Trips</span>
           </button>
-          <button className="nav-main">
-            <Plus size={24} />
-          </button>
+
           <button>
-            <ReceiptText size={20} />
-            Budget
+            <PieChart size={22} />
+            <span>Budget</span>
           </button>
+
           <button>
-            <UserRound size={20} />
-            Profile
+            <UserRound size={22} />
+            <span>Profile</span>
           </button>
         </nav>
       </section>
