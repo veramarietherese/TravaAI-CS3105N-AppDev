@@ -1,0 +1,109 @@
+.home-section-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.home-section-row h2 {
+  font-size: 30px;
+  letter-spacing: -1.2px;
+}
+
+.home-section-row button {
+  padding: 8px 13px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 8px 18px rgba(20, 18, 15, 0.08);
+}
+
+.tour-section {
+  margin-top: 32px;
+}
+
+.tour-carousel {
+  margin-top: 16px;
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding: 0 4px 10px 0;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.tour-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.tour-card {
+  flex: 0 0 280px;
+  height: 238px;
+  border-radius: 24px;
+  overflow: hidden;
+  position: relative;
+  scroll-snap-align: start;
+  color: white;
+  background: #ddd;
+  box-shadow: 0 18px 38px rgba(16, 20, 32, 0.16);
+}
+
+.tour-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tour-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to top, rgba(0, 0, 0, 0.62), transparent 62%),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.15), transparent 40%);
+}
+
+.tour-pills {
+  position: absolute;
+  top: 16px;
+  left: 14px;
+  display: flex;
+  gap: 8px;
+  z-index: 2;
+}
+
+.tour-pills span {
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #1a1620;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(12px);
+}
+
+.tour-arrow {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 43px;
+  height: 43px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #111827;
+  background: rgba(255, 255, 255, 0.9);
+  font-size: 22px;
+  font-weight: 800;
+  z-index: 2;
+}
+
+.tour-card h3 {
+  position: absolute;
+  left: 18px;
+  right: 20px;
+  bottom: 24px;
+  z-index: 2;
+  font-size: 24px;
+  line-height: 1.02;
+  letter-spacing: -0.7px;
+}

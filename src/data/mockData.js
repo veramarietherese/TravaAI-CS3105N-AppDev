@@ -10,22 +10,22 @@ export const trip = {
 
 export const quickActions = [
   {
-    title: "Create\nNew Trip",
+    title: "Create Trip",
     image: "/src/assets/luggage.png",
     className: "lavender",
   },
   {
-    title: "Explore\nDestinations",
+    title: "Explore Destinations",
     image: "/src/assets/globe.png",
     className: "pink",
   },
   {
-    title: "Budget\nPlanner",
+    title: "Budget Planner",
     image: "/src/assets/wallet.png",
     className: "softblue",
   },
   {
-    title: "Invite\nFriends",
+    title: "Invite Friends",
     image: "/src/assets/invite.png",
     className: "lavender",
   },
@@ -117,6 +117,33 @@ export const trendingDeals = [
     title: "City Lights",
     subtitle: "Tokyo spring route",
     price: "₱12,900",
-    icon: "🗼",
+    icon: "🌊",
+  },
+]
+
+export const tourPackages = [
+  {
+    title: "Toronto tour package",
+    location: "Toronto, Canada",
+    days: "15 Days",
+    image:
+      "https://images.unsplash.com/photo-1526289034009-0240ddb68ce3?q=80&w=900&auto=format&fit=crop",
+  },
+
+  {
+    title: "Paris Getaway",
+    location: "Paris, France",
+    days: "10 Days",
+    image:
+      "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=900&auto=format&fit=crop",
+  },
+
+  
+  {
+    title: "Japan Sakura Escape",
+    location: "Japan",
+    days: "8 Days",
+    image:
+      "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=80&w=900&auto=format&fit=crop",
   },
 ]

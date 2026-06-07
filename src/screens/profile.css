@@ -1,0 +1,247 @@
+.profile-screen {
+    background:
+      radial-gradient(circle at 15% 4%, rgba(255, 232, 242, 0.72), transparent 30%),
+      radial-gradient(circle at 90% 8%, rgba(235, 226, 255, 0.78), transparent 32%),
+      #fffefd;
+  }
+  
+  .profile-topbar {
+    display: grid;
+    grid-template-columns: 48px 1fr 48px;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .profile-topbar h1 {
+    text-align: center;
+    font-size: 27px;
+    letter-spacing: -1px;
+  }
+  
+  .profile-topbar button {
+    width: 48px;
+    height: 48px;
+    border-radius: 18px;
+    display: grid;
+    place-items: center;
+    background: rgba(255, 255, 255, 0.76);
+    backdrop-filter: blur(22px);
+    box-shadow:
+      0 14px 28px rgba(24, 20, 18, 0.08),
+      inset 0 0 0 1px rgba(255,255,255,0.85);
+  }
+  
+  .profile-hero-card {
+    margin-top: 22px;
+    min-height: 270px;
+    border-radius: 34px;
+    padding: 26px 22px;
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+    background:
+      radial-gradient(circle at 50% 0%, rgba(255,255,255,0.9), transparent 38%),
+      linear-gradient(145deg, #ffe8f2, #eee8ff 58%, #fff7ef);
+    box-shadow: 0 24px 54px rgba(49, 31, 88, 0.14);
+  }
+  
+  .profile-glow {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 18% 18%, rgba(255, 91, 152, 0.25), transparent 28%),
+      radial-gradient(circle at 85% 16%, rgba(123, 45, 255, 0.2), transparent 30%);
+  }
+  
+  .profile-avatar-xl {
+    margin: 6px auto 0;
+    width: 96px;
+    height: 96px;
+    position: relative;
+    z-index: 2;
+    border-radius: 34px;
+    display: grid;
+    place-items: center;
+    font-size: 58px;
+    background: rgba(255,255,255,0.82);
+    box-shadow:
+      0 18px 35px rgba(18,22,32,0.12),
+      inset 0 0 0 1px rgba(255,255,255,0.9);
+  }
+  
+  .profile-hero-card h2 {
+    margin-top: 18px;
+    position: relative;
+    z-index: 2;
+    font-size: 29px;
+    letter-spacing: -1px;
+  }
+  
+  .profile-hero-card p {
+    margin: 7px auto 0;
+    max-width: 270px;
+    position: relative;
+    z-index: 2;
+    color: #667085;
+    font-size: 13px;
+    line-height: 1.35;
+  }
+  
+  .profile-badges {
+    margin-top: 17px;
+    position: relative;
+    z-index: 2;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  
+  .profile-badges span {
+    height: 32px;
+    padding: 0 11px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #7b2dff;
+    font-size: 11px;
+    font-weight: 900;
+    background: rgba(255,255,255,0.68);
+    backdrop-filter: blur(18px);
+  }
+  
+  .profile-stats-grid {
+    margin-top: 16px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  
+  .profile-stats-grid article {
+    min-height: 92px;
+    border-radius: 24px;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    background: rgba(255,255,255,0.82);
+    backdrop-filter: blur(22px);
+    box-shadow:
+      0 16px 34px rgba(30,24,16,0.08),
+      inset 0 0 0 1px rgba(255,255,255,0.82);
+  }
+  
+  .profile-stats-grid strong {
+    font-size: 26px;
+    letter-spacing: -0.8px;
+  }
+  
+  .profile-stats-grid span {
+    margin-top: 4px;
+    color: #667085;
+    font-size: 12px;
+    font-weight: 800;
+  }
+  
+  .profile-section-head {
+    margin-top: 28px;
+  }
+  
+  .profile-section-head span {
+    color: #7b2dff;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .profile-section-head h2 {
+    margin-top: 5px;
+    font-size: 26px;
+    letter-spacing: -1px;
+  }
+  
+  .travel-style-card {
+    margin-top: 14px;
+    border-radius: 30px;
+    padding: 22px;
+    background: rgba(255,255,255,0.84);
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(255,255,255,0.82);
+    box-shadow: 0 18px 42px rgba(18,22,32,0.08);
+  }
+  
+  .travel-style-card svg {
+    color: #7b2dff;
+  }
+  
+  .travel-style-card h3 {
+    margin-top: 12px;
+    font-size: 21px;
+    letter-spacing: -0.7px;
+  }
+  
+  .travel-style-card p {
+    margin-top: 8px;
+    color: #667085;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  
+  .travel-style-card button {
+    margin-top: 18px;
+    height: 44px;
+    padding: 0 15px;
+    border-radius: 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: white;
+    font-size: 13px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #ff5b98, #7b2dff);
+    box-shadow: 0 14px 26px rgba(123,45,255,0.24);
+  }
+  
+  .profile-menu {
+    margin-top: 16px;
+    display: grid;
+    gap: 12px;
+  }
+  
+  .profile-row {
+    min-height: 76px;
+    border-radius: 24px;
+    padding: 13px;
+    display: grid;
+    grid-template-columns: 50px 1fr 20px;
+    align-items: center;
+    gap: 12px;
+    text-align: left;
+    background: rgba(255,255,255,0.86);
+    backdrop-filter: blur(22px);
+    box-shadow:
+      0 14px 30px rgba(25,22,18,0.07),
+      inset 0 0 0 1px rgba(238,232,225,0.9);
+  }
+  
+  .profile-row-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 18px;
+    display: grid;
+    place-items: center;
+    color: #7b2dff;
+    background: linear-gradient(145deg, #f2ecff, #ffeaf4);
+  }
+  
+  .profile-row h3 {
+    font-size: 14px;
+    letter-spacing: -0.3px;
+  }
+  
+  .profile-row p {
+    margin-top: 4px;
+    color: #667085;
+    font-size: 12px;
+  }

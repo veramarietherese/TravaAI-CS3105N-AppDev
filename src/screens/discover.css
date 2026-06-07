@@ -1,0 +1,411 @@
+.premium-discover-page {
+  padding: 18px 18px 132px;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(202, 252, 255, 0.52), transparent 34%),
+    radial-gradient(circle at 92% 8%, rgba(255, 221, 238, 0.64), transparent 30%),
+    linear-gradient(180deg, #fffefd, #fbf9ff);
+}
+
+.discover-hero-v4 {
+  height: 360px;
+  border-radius: 36px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 28px 64px rgba(16, 45, 62, 0.2);
+}
+
+.discover-hero-v4 > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.discover-hero-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom, rgba(0, 80, 100, 0.05), rgba(3, 20, 32, 0.64)),
+    radial-gradient(circle at 22% 10%, rgba(255, 255, 255, 0.22), transparent 30%);
+}
+
+.discover-hero-top {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  right: 18px;
+  z-index: 4;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.hero-icon-glass {
+  width: 44px;
+  height: 44px;
+  border-radius: 17px;
+  display: grid;
+  place-items: center;
+  color: white;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1px solid rgba(255,255,255,0.22);
+}
+
+.hero-book-btn {
+  height: 39px;
+  padding: 0 17px;
+  border-radius: 999px;
+  color: white;
+  font-size: 12px;
+  font-weight: 900;
+  background: rgba(5, 8, 18, 0.78);
+  backdrop-filter: blur(18px);
+}
+
+.discover-hero-copy {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 24px;
+  z-index: 4;
+  color: white;
+}
+
+.discover-hero-copy > span {
+  font-size: 17px;
+  font-weight: 850;
+}
+
+.discover-hero-copy h1 {
+  margin-top: 4px;
+  font-size: 31px;
+  line-height: 1;
+  letter-spacing: -1.2px;
+  font-weight: 800;
+}
+
+.discover-hero-copy p {
+  margin-top: 28px;
+  margin-bottom: 9px;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.discover-glass-search {
+  height: 50px;
+  border-radius: 19px;
+  padding: 0 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.24);
+  backdrop-filter: blur(26px);
+  -webkit-backdrop-filter: blur(26px);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.discover-glass-search span {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.discover-service-row {
+  margin-top: 16px;
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.discover-service-row::-webkit-scrollbar {
+  display: none;
+}
+
+.discover-service-row button {
+  flex: 0 0 auto;
+  height: 43px;
+  padding: 0 18px;
+  border-radius: 999px;
+  color: #667085;
+  font-size: 12px;
+  font-weight: 850;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow:
+    0 12px 26px rgba(18, 40, 52, 0.06),
+    inset 0 0 0 1px rgba(238, 232, 225, 0.9);
+}
+
+.discover-service-row .active {
+  color: #0f172a;
+  background: linear-gradient(135deg, #c8f7ff, #ffe2f0);
+  box-shadow: 0 14px 28px rgba(72, 191, 227, 0.18);
+}
+
+.featured-deal-banner {
+  margin-top: 18px;
+  min-height: 145px;
+  border-radius: 28px;
+  padding: 18px;
+  overflow: hidden;
+  position: relative;
+  color: white;
+  background:
+    linear-gradient(to right, rgba(10, 30, 50, 0.86), rgba(10, 30, 50, 0.16)),
+    url("https://images.unsplash.com/photo-1571896349842-33c89424de2d?q=80&w=1000&auto=format&fit=crop");
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 22px 48px rgba(16, 45, 62, 0.14);
+}
+
+.featured-deal-banner span {
+  display: inline-flex;
+  padding: 7px 10px;
+  border-radius: 999px;
+  color: #0f172a;
+  font-size: 10px;
+  font-weight: 900;
+  background: rgba(255,255,255,0.86);
+}
+
+.featured-deal-banner h2 {
+  margin-top: 11px;
+  max-width: 230px;
+  font-size: 24px;
+  line-height: 1.02;
+  letter-spacing: -0.8px;
+}
+
+.featured-deal-banner p {
+  margin-top: 7px;
+  max-width: 260px;
+  font-size: 12px;
+  opacity: 0.88;
+}
+
+.featured-deal-banner button {
+  margin-top: 12px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 900;
+  background: white;
+}
+
+.discover-section-row {
+  margin-top: 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.discover-section-row h2 {
+  font-size: 22px;
+  letter-spacing: -0.8px;
+}
+
+.discover-section-row p {
+  margin-top: 4px;
+  color: #667085;
+  font-size: 12px;
+}
+
+.discover-section-row button {
+  color: #36b6d8;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.featured-place-grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.featured-place-card {
+  height: 238px;
+  border-radius: 27px;
+  overflow: hidden;
+  position: relative;
+  color: white;
+  box-shadow: 0 20px 42px rgba(18, 40, 52, 0.14);
+}
+
+.featured-place-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.featured-place-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(5, 8, 18, 0.72), transparent 58%);
+}
+
+.featured-place-card button {
+  position: absolute;
+  top: 13px;
+  right: 13px;
+  height: 31px;
+  padding: 0 12px;
+  border-radius: 999px;
+  z-index: 3;
+  color: white;
+  font-size: 10px;
+  font-weight: 900;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(16px);
+}
+
+.featured-place-card div:last-child {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 15px;
+  z-index: 3;
+}
+
+.featured-place-card h3 {
+  font-size: 16px;
+  line-height: 1.08;
+  letter-spacing: -0.4px;
+}
+
+.featured-place-card p {
+  margin-top: 5px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.featured-place-card p span {
+  color: #ffe176;
+}
+
+.category-title-row {
+  margin-top: 24px;
+}
+
+.explore-more-row {
+  margin-top: 14px;
+  display: flex;
+  gap: 13px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  scrollbar-width: none;
+}
+
+.explore-more-row::-webkit-scrollbar {
+  display: none;
+}
+
+.explore-more-card {
+  flex: 0 0 205px;
+  height: 160px;
+  border-radius: 25px;
+  overflow: hidden;
+  position: relative;
+  color: white;
+  box-shadow: 0 16px 34px rgba(18, 40, 52, 0.13);
+}
+
+.explore-more-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.explore-more-card > div {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(5, 8, 18, 0.72), transparent 60%);
+}
+
+.explore-more-card button {
+  position: absolute;
+  top: 11px;
+  right: 11px;
+  z-index: 3;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #ff4f92;
+  background: rgba(255,255,255,0.88);
+  backdrop-filter: blur(16px);
+}
+
+.explore-more-card section {
+  position: absolute;
+  left: 13px;
+  right: 13px;
+  bottom: 13px;
+  z-index: 3;
+}
+
+.explore-more-card h3 {
+  font-size: 15px;
+  line-height: 1.05;
+}
+
+.explore-more-card p {
+  margin-top: 4px;
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+.discover-genius-card {
+  margin-top: 12px;
+  min-height: 135px;
+  border-radius: 29px;
+  padding: 19px;
+  display: grid;
+  grid-template-columns: 1fr 44px;
+  align-items: end;
+  gap: 14px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255,255,255,0.82), transparent 30%),
+    linear-gradient(145deg, #e5faff, #ffe7f1 58%, #f3edff);
+  box-shadow:
+    0 22px 46px rgba(49, 31, 88, 0.12),
+    inset 0 0 0 1px rgba(255,255,255,0.78);
+}
+
+.discover-genius-card span {
+  color: #7b2dff;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.discover-genius-card h2 {
+  margin-top: 8px;
+  font-size: 21px;
+  line-height: 1.05;
+  letter-spacing: -0.7px;
+}
+
+.discover-genius-card p {
+  margin-top: 7px;
+  color: #667085;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.discover-genius-card button {
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  color: white;
+  background: linear-gradient(135deg, #ff5b98, #7b2dff);
+  box-shadow: 0 14px 24px rgba(123,45,255,0.23);
+}

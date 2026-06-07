@@ -2,65 +2,71 @@ import { useState } from "react"
 import {
   ArrowLeft,
   Bell,
-  Briefcase,
   CalendarDays,
   ChevronRight,
   Filter,
   Heart,
-  Home,
   MapPin,
-  PieChart,
   Search,
   Sparkles,
-  UserRound,
 } from "lucide-react"
+
+import StatusBar from "./components/StatusBar"
+import BottomNav from "./components/BottomNav"
+import BudgetScreen from "./screens/BudgetScreen"
+import TripsScreen from "./screens/TripsScreen"
+import ProfileScreen from "./screens/ProfileScreen"
+import SmartMatchScreen from "./screens/SmartMatchScreen"
+
 import {
   discoverCategories,
-  discoverPlaces,
   featuredDestinations,
   quickActions,
   trendingDeals,
   trip,
+  tourPackages,
 } from "./data/mockData"
+
 import "./index.css"
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState("home")
 
   const goToHome = () => setCurrentScreen("home")
-  const goToDiscover = () => setCurrentScreen("discover")
+  const goToExplore = () => setCurrentScreen("explore")
+  const goToTrips = () => setCurrentScreen("trips")
+  const goToSmartMatch = () => setCurrentScreen("smartmatch")
+  const goToProfile = () => setCurrentScreen("profile")
 
   return (
     <main className="app-shell">
-      <section className="phone">
-        <StatusBar />
-
-        {currentScreen === "discover" ? (
+    <section className="phone">
+      <StatusBar />
+  
+      {
+        currentScreen === "explore" ? (
           <DiscoverScreen onBack={goToHome} />
+        ) : currentScreen === "trips" ? (
+          <TripsScreen />
+        ) : currentScreen === "smartmatch" ? (
+          <SmartMatchScreen />
+        ) : currentScreen === "profile" ? (
+          <ProfileScreen />
         ) : (
-          <HomeScreen onDiscover={goToDiscover} />
-        )}
-
-        <BottomNav
-          currentScreen={currentScreen}
-          onHome={goToHome}
-          onDiscover={goToDiscover}
-        />
-      </section>
-    </main>
-  )
-}
-
-function StatusBar() {
-  return (
-    <div className="status-bar">
-      <strong>9:41</strong>
-      <div className="status-icons">
-        <span className="signal">▮▮▮</span>
-        <span>⌁</span>
-        <span className="battery" />
-      </div>
-    </div>
+          <HomeScreen onDiscover={goToExplore} />
+        )
+      }
+  
+      <BottomNav
+        currentScreen={currentScreen}
+        onHome={goToHome}
+        onExplore={goToExplore}
+        onTrips={goToTrips}
+        onSmartMatch={goToSmartMatch}
+        onProfile={goToProfile}
+      />
+    </section>
+  </main>
   )
 }
 
@@ -68,7 +74,7 @@ function HomeScreen({ onDiscover }) {
   const progress = Math.round((trip.spent / trip.budget) * 100)
 
   return (
-    <div className="scroll-area">
+    <div className="scroll-area home-screen">
       <header className="header">
         <div className="profile">
           <div className="profile-avatar">🧑🏻</div>
@@ -78,7 +84,7 @@ function HomeScreen({ onDiscover }) {
           </div>
         </div>
 
-        <button className="bell-btn" aria-label="Notifications" type="button">
+        <button className="bell-btn" type="button">
           <Bell size={30} strokeWidth={2.5} />
           <span />
         </button>
@@ -94,6 +100,7 @@ function HomeScreen({ onDiscover }) {
       <article className="trip-card">
         <div className="trip-photo" style={{ backgroundImage: `url(${trip.image})` }}>
           <div className="trip-shade" />
+
           <div className="trip-info">
             <h3>{trip.title}</h3>
             <p>
@@ -143,27 +150,109 @@ function HomeScreen({ onDiscover }) {
         </div>
       </section>
 
-      <section className="discover">
-        <div className="section-title discover-title">
-          <h2>Discover</h2>
-          <button type="button" onClick={onDiscover}>
-            Search <ChevronRight size={24} />
-          </button>
+      <section className="agency-package-section">
+        <div className="home-section-row">
+          <div>
+            <h2>AI-Matched Agency Packages</h2>
+            <p>Curated trips from verified travel partners.</p>
+          </div>
+          <button type="button">View all</button>
         </div>
 
-        <div className="discover-grid">
-          {discoverPlaces.map((place) => (
-            <article className="place-card" key={place.city}>
-              <img src={place.image} alt={place.city} />
-              <button className="heart" type="button" aria-label={`Save ${place.city}`}>
-                <Heart size={22} />
-              </button>
-              <div>
-                <h3>{place.city}</h3>
-                <p>{place.subtitle}</p>
+        <div className="agency-package-carousel">
+          {tourPackages.map((pkg) => (
+            <article className="agency-package-card" key={pkg.title}>
+              <img src={pkg.image} alt={pkg.title} />
+              <div className="agency-package-overlay" />
+              <div className="match-badge">{pkg.match || "94% Match"}</div>
+
+              <div className="agency-package-content">
+                <span className="agency-name">{pkg.agency || "Verified Partner"}</span>
+                <h3>{pkg.title}</h3>
+                <p>{pkg.location}</p>
+
+                <div className="package-meta">
+                  <span>{pkg.days}</span>
+                  <span>{pkg.places || "Tours • Hotel • Transfers"}</span>
+                </div>
               </div>
             </article>
           ))}
+        </div>
+      </section>
+
+      <section className="trusted-agencies-section">
+        <div className="home-section-row">
+          <div>
+            <h2>Trusted Agencies for You</h2>
+            <p>Verified partners matched to your trip style.</p>
+          </div>
+          <button type="button">View all</button>
+        </div>
+
+        <div className="premium-agency-carousel">
+          <article className="premium-agency-card">
+            <div className="agency-cover japan-cover">
+              <span>96% Match</span>
+            </div>
+
+            <div className="premium-agency-body">
+              <div className="premium-agency-logo">🌸</div>
+              <h3>Sakura Travels</h3>
+              <p>Japan • Korea • Visa support</p>
+
+              <div className="agency-stats">
+                <span>4.9 ★</span>
+                <span>Fast reply</span>
+                <span>Family trips</span>
+              </div>
+
+              <button type="button">View Agency</button>
+            </div>
+          </article>
+
+          <article className="premium-agency-card">
+            <div className="agency-cover dubai-cover">
+              <span>93% Match</span>
+            </div>
+
+            <div className="premium-agency-body">
+              <div className="premium-agency-logo">✈️</div>
+              <h3>PAPH Travel</h3>
+              <p>Dubai • Abu Dhabi • Group tours</p>
+
+              <div className="agency-stats">
+                <span>4.8 ★</span>
+                <span>Visa help</span>
+                <span>Packages</span>
+              </div>
+
+              <button type="button">View Agency</button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section className="smart-match-final">
+        <div className="smart-match-copy">
+          <span>
+            <Sparkles size={15} /> Smart Match
+          </span>
+          <h2>Find the right trip and agency in minutes.</h2>
+          <p>
+            Answer 3 quick questions and TravAI will match you with packages,
+            agencies, and services that fit your budget.
+          </p>
+
+          <button type="button">
+            Find My Trip <ChevronRight size={18} />
+          </button>
+        </div>
+
+        <div className="smart-match-visual">
+          <div className="orbit-globe">🌍</div>
+          <div className="orbit-plane">✈️</div>
+          <div className="orbit-pin">📍</div>
         </div>
       </section>
     </div>
@@ -171,131 +260,157 @@ function HomeScreen({ onDiscover }) {
 }
 
 function DiscoverScreen({ onBack }) {
-  return (
-    <div className="scroll-area discover-screen">
-      <header className="discover-header">
-        <button className="round-icon" onClick={onBack} aria-label="Go back" type="button">
-          <ArrowLeft size={22} />
-        </button>
-        <h1>Discover</h1>
-        <button className="round-icon" aria-label="Filters" type="button">
-          <Filter size={21} />
-        </button>
-      </header>
+  const featuredPlaces = [
+    {
+      title: "Obernberg am Brenner",
+      country: "Austria",
+      image:
+        "https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=900&auto=format&fit=crop",
+    },
+    {
+      title: "Ao Nang, Krabi",
+      country: "Thailand",
+      image:
+        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=900&auto=format&fit=crop",
+    },
+  ]
 
-      <section className="discover-search">
-        <Search size={22} />
-        <span>Where do you want to go?</span>
+  const exploreMore = [
+    {
+      title: "Tower Bridge Suite",
+      location: "London",
+      image:
+        "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?q=80&w=700&auto=format&fit=crop",
+    },
+    {
+      title: "Seaside Villa",
+      location: "Bali",
+      image:
+        "https://images.unsplash.com/photo-1537996194471-e657df975ab4?q=80&w=700&auto=format&fit=crop",
+    },
+  ]
+
+  return (
+    <div className="scroll-area discover-screen premium-discover-page">
+      <section className="discover-hero-v4">
+        <img
+          src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1200&auto=format&fit=crop"
+          alt="Tropical destination"
+        />
+
+        <div className="discover-hero-shade" />
+
+        <div className="discover-hero-top">
+          <button className="hero-icon-glass" onClick={onBack} type="button">
+            <ArrowLeft size={19} />
+          </button>
+
+          <button className="hero-book-btn" type="button">
+            Book Now
+          </button>
+        </div>
+
+        <div className="discover-hero-copy">
+          <span>Hi, Dhan!</span>
+          <h1>Explore the world</h1>
+
+          <p>Where do you want to go?</p>
+
+          <div className="discover-glass-search">
+            <Search size={18} />
+            <span>Search destinations, hotels, or stays</span>
+          </div>
+        </div>
       </section>
 
-      <section className="category-row">
-        {discoverCategories.map((category) => (
-          <button
-            type="button"
-            className={category.active ? "category-chip active" : "category-chip"}
-            key={category.label}
-          >
-            <span>{category.icon}</span>
-            {category.label}
+      <section className="discover-service-row">
+        {["Stays", "Flights", "Tours", "Visa"].map((item, index) => (
+          <button className={index === 0 ? "active" : ""} type="button" key={item}>
+            {item}
           </button>
         ))}
       </section>
 
-      <section className="section-title discover-section-title">
-        <h2>Featured Destinations</h2>
-        <button type="button">
-          View All <ChevronRight size={22} />
-        </button>
+      <section className="featured-deal-banner">
+        <div>
+          <span>Featured Deal</span>
+          <h2>Bali private villa escape</h2>
+          <p>4D3N · airport transfer · agency assisted</p>
+          <button type="button">See deal</button>
+        </div>
       </section>
 
-      <section className="destination-grid">
-        {featuredDestinations.map((destination) => (
-          <article className="destination-card" key={destination.city}>
-            <img src={destination.image} alt={`${destination.city}, ${destination.country}`} />
-            <div className="destination-overlay" />
-            <button className="destination-heart" type="button">
-              <Heart size={18} />
-            </button>
-            <div className="destination-content">
-              <h3>{destination.city}</h3>
-              <p>
-                <MapPin size={13} />
-                {destination.country}
-              </p>
-              <span>{destination.price}</span>
-            </div>
-          </article>
-        ))}
+      <section className="discover-section-row">
+        <div>
+          <h2>Featured Places</h2>
+          <p>Most trending places this season</p>
+        </div>
+        <button type="button">See All</button>
       </section>
 
-      <section className="section-title discover-section-title compact">
-        <h2>Trending Deals</h2>
-        <button type="button">
-          See All <ChevronRight size={22} />
-        </button>
-      </section>
+      <section className="featured-place-grid">
+        {featuredPlaces.map((place) => (
+          <article className="featured-place-card" key={place.title}>
+            <img src={place.image} alt={place.title} />
+            <div className="featured-place-shade" />
 
-      <section className="deals-row">
-        {trendingDeals.map((deal) => (
-          <article className="deal-card" key={deal.title}>
-            <div className="deal-icon">{deal.icon}</div>
+            <button type="button">Book Now</button>
+
             <div>
-              <h3>{deal.title}</h3>
-              <p>{deal.subtitle}</p>
+              <h3>{place.title}</h3>
+              <p>
+                {place.country} <span>⭐ 4.9</span>
+              </p>
             </div>
-            <strong>{deal.price}</strong>
           </article>
         ))}
       </section>
 
-      <section className="ai-trip-card">
-        <div className="ai-copy">
-          <span>
-            <Sparkles size={16} /> Smart Match
-          </span>
-          <h2>Not sure where to go?</h2>
-          <p>Answer 3 quick questions and we’ll suggest your perfect trip.</p>
-          <button type="button">Find My Trip</button>
+      <section className="discover-section-row category-title-row">
+        <div>
+          <h2>Explore More</h2>
+          <p>Curated stays and luxury escapes</p>
+        </div>
+        <button type="button">See All</button>
+      </section>
+
+      <section className="explore-more-row">
+        {exploreMore.map((place) => (
+          <article className="explore-more-card" key={place.title}>
+            <img src={place.image} alt={place.title} />
+            <div />
+            <button type="button">
+              <Heart size={16} />
+            </button>
+
+            <section>
+              <h3>{place.title}</h3>
+              <p>{place.location}</p>
+            </section>
+          </article>
+        ))}
+      </section>
+
+      <section className="discover-genius-card">
+        <div>
+          <span>Smart Match</span>
+          <h2>Save more with agency-matched trips.</h2>
+          <p>Unlock verified packages, visa help, hotels, tours, and transfers.</p>
         </div>
 
-        <div className="ai-visual">
-          <img src="/src/assets/luggage.png" alt="" />
-        </div>
+        <button type="button">
+          <ChevronRight size={18} />
+        </button>
       </section>
     </div>
   )
 }
 
-function BottomNav({ currentScreen, onHome, onDiscover }) {
+function PlaceholderScreen({ title, subtitle }) {
   return (
-    <nav className="bottom-nav">
-      <button
-        type="button"
-        className={currentScreen === "home" ? "active" : ""}
-        onClick={onHome}
-      >
-        <Home size={30} fill="currentColor" />
-        <span>Home</span>
-      </button>
-
-      <button
-        type="button"
-        className={currentScreen === "discover" ? "active" : ""}
-        onClick={onDiscover}
-      >
-        <Briefcase size={30} />
-        <span>Trips</span>
-      </button>
-
-      <button type="button">
-        <PieChart size={31} />
-        <span>Budget</span>
-      </button>
-
-      <button type="button">
-        <UserRound size={30} />
-        <span>Profile</span>
-      </button>
-    </nav>
+    <div className="scroll-area placeholder-screen">
+      <h1>{title}</h1>
+      <p>{subtitle}</p>
+    </div>
   )
 }
