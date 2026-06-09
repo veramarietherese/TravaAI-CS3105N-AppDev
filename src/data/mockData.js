@@ -147,3 +147,39 @@ export const tourPackages = [
       "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=80&w=900&auto=format&fit=crop",
   },
 ]
+
+export const routeMaps = [
+  {
+    title: "Bali, Indonesia",
+    date: "21 Oct - 24 Oct 2027 | 3 Days",
+    image: "https://hayatestate.com/wp-content/uploads/2024/03/playa-y-acantilados-en-bali-indonesia-1.jpg",
+    routeMap: "https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=600&auto=format&fit=crop",
+  },
+  {
+    title: "Sydney, Australia",
+    date: "21 Oct - 24 Oct 2027 | 3 Days",
+    image: "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?q=80&w=900&auto=format&fit=crop",
+    routeMap: "https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=600&auto=format&fit=crop",
+  },
+]
+
+export const travelAgencies = [
+  {
+    name: "Trip & Go",
+    subtitle: "Japan • Korea • Visa support",
+    image: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=900&auto=format&fit=crop",
+    logo: "✈️",
+  },
+  {
+    name: "Trip & Go",
+    subtitle: "Japan • Korea • Visa support",
+    image: "https://images.unsplash.com/photo-1509356843151-3e7d96241e11?q=80&w=900&auto=format&fit=crop",
+    logo: "🛫",
+  },
+  {
+    name: "Trip & Go",
+    subtitle: "Japan • Korea • Visa support",
+    image: "https://images.unsplash.com/photo-1547981609-4b6bfe67ca0b?q=80&w=900&auto=format&fit=crop",
+    logo: "💎",
+  },
+]

@@ -4,14 +4,14 @@ import {
   Bell,
   CalendarDays,
   ChevronRight,
-  Filter,
   Heart,
   MapPin,
   Search,
-  Sparkles,
+  Globe2,
+  Plane,
+  Flag,
 } from "lucide-react"
 
-import StatusBar from "./components/StatusBar"
 import BottomNav from "./components/BottomNav"
 import BudgetScreen from "./screens/BudgetScreen"
 import TripsScreen from "./screens/TripsScreen"
@@ -25,6 +25,8 @@ import {
   trendingDeals,
   trip,
   tourPackages,
+  routeMaps,
+  travelAgencies,
 } from "./data/mockData"
 
 import "./index.css"
@@ -41,7 +43,6 @@ export default function App() {
   return (
     <main className="app-shell">
     <section className="phone">
-      <StatusBar />
   
       {
         currentScreen === "explore" ? (
@@ -74,41 +75,123 @@ function HomeScreen({ onDiscover }) {
   const progress = Math.round((trip.spent / trip.budget) * 100)
 
   return (
-    <div className="scroll-area home-screen">
-      <header className="header">
-        <div className="profile">
-          <div className="profile-avatar">🧑🏻</div>
+    <div className="scroll-area home-screen travel-home-v2">
+      <header className="home-v2-header">
+        <div className="home-v2-profile">
+          <div className="home-v2-avatar">🧑🏻</div>
+
           <div>
             <p>Hey, Dhan! 👋</p>
             <h1>Where to next?</h1>
           </div>
         </div>
 
-        <button className="bell-btn" type="button">
-          <Bell size={30} strokeWidth={2.5} />
+        <button className="home-v2-bell" type="button">
+          <Bell size={30} strokeWidth={2.45} />
           <span />
         </button>
       </header>
 
-      <section className="section-title">
+      <section className="travel-footprint-card">
+        <div className="footprint-copy">
+          <div>
+            <h2>Your Travel Footprint</h2>
+            <p>
+              A recap of everywhere you’ve been
+              <br />
+              and where you’re going.
+            </p>
+          </div>
+
+          <button type="button" aria-label="Expand travel footprint">
+            ⛶
+          </button>
+        </div>
+
+        <div className="globe-visual">
+          <div className="globe-sphere">
+            <span className="route route-one" />
+            <span className="route route-two" />
+
+            <span className="plane-marker plane-one">✈</span>
+            <span className="plane-marker plane-two">✈</span>
+
+            <div className="map-location cebu">
+              <i />
+              <strong>Cebu</strong>
+              <small>Philippines</small>
+            </div>
+
+            <div className="map-location tokyo">
+              <i />
+              <strong>Tokyo</strong>
+              <small>Japan</small>
+            </div>
+
+            <div className="map-location seoul">
+              <i />
+              <strong>Seoul</strong>
+              <small>Korea</small>
+            </div>
+
+            <div className="map-location bali">
+              <i />
+              <strong>Bali</strong>
+              <small>Indonesia</small>
+            </div>
+          </div>
+        </div>
+
+        <div className="travel-stats-glass">
+          <article>
+            <Globe2 size={25} />
+            <strong>46,380 km</strong>
+            <span>Total Miles</span>
+          </article>
+
+          <article>
+            <Plane size={25} />
+            <strong>12</strong>
+            <span>Flights Taken</span>
+          </article>
+
+          <article>
+            <Flag size={25} />
+            <strong>8</strong>
+            <span>Countries</span>
+          </article>
+
+          <article>
+            <CalendarDays size={25} />
+            <strong>104</strong>
+            <span>Days Traveled</span>
+          </article>
+        </div>
+      </section>
+
+      <section className="home-v2-section-title">
         <h2>Upcoming Trips</h2>
         <button type="button">
-          View All <ChevronRight size={24} />
+          View All <ChevronRight size={22} />
         </button>
       </section>
 
-      <article className="trip-card">
-        <div className="trip-photo" style={{ backgroundImage: `url(${trip.image})` }}>
-          <div className="trip-shade" />
+      <article className="home-v2-trip-card">
+        <div
+          className="home-v2-trip-photo"
+          style={{ backgroundImage: `url(${trip.image})` }}
+        >
+          <div className="home-v2-trip-shade" />
 
-          <div className="trip-info">
+          <div className="home-v2-trip-info">
             <h3>{trip.title}</h3>
+
             <p>
-              <CalendarDays size={24} />
+              <CalendarDays size={21} />
               {trip.date}
             </p>
 
-            <div className="people">
+            <div className="home-v2-people">
               {trip.people.map((person, index) => (
                 <span key={`${person}-${index}`}>{person}</span>
               ))}
@@ -116,7 +199,7 @@ function HomeScreen({ onDiscover }) {
           </div>
         </div>
 
-        <div className="budget-row">
+        <div className="home-v2-budget-row">
           <div>
             <span>Budget used</span>
             <strong>
@@ -124,20 +207,20 @@ function HomeScreen({ onDiscover }) {
             </strong>
           </div>
 
-          <div className="progress">
+          <div className="home-v2-progress">
             <span style={{ width: `${progress}%` }} />
           </div>
         </div>
       </article>
 
-      <section className="quick">
+      <section className="home-v2-quick">
         <h2>Quick Actions</h2>
 
-        <div className="quick-grid">
+        <div className="home-v2-quick-grid">
           {quickActions.map((action) => (
             <button
               type="button"
-              className={`quick-card ${action.className}`}
+              className={`home-v2-quick-card ${action.className}`}
               key={action.title}
               onClick={() => {
                 if (action.title.includes("Explore")) onDiscover()
@@ -150,109 +233,49 @@ function HomeScreen({ onDiscover }) {
         </div>
       </section>
 
-      <section className="agency-package-section">
-        <div className="home-section-row">
-          <div>
-            <h2>AI-Matched Agency Packages</h2>
-            <p>Curated trips from verified travel partners.</p>
-          </div>
-          <button type="button">View all</button>
-        </div>
+      <section className="tour-section">
+        <h2>Tour Packages for you</h2>
 
-        <div className="agency-package-carousel">
-          {tourPackages.map((pkg) => (
-            <article className="agency-package-card" key={pkg.title}>
-              <img src={pkg.image} alt={pkg.title} />
-              <div className="agency-package-overlay" />
-              <div className="match-badge">{pkg.match || "94% Match"}</div>
+        <div className="tour-grid">
+          {routeMaps.map((pkg) => (
+            <article className="tour-card-v2" key={pkg.title}>
+              <img className="tour-main-img" src={pkg.image} alt={pkg.title} />
 
-              <div className="agency-package-content">
-                <span className="agency-name">{pkg.agency || "Verified Partner"}</span>
-                <h3>{pkg.title}</h3>
-                <p>{pkg.location}</p>
-
-                <div className="package-meta">
-                  <span>{pkg.days}</span>
-                  <span>{pkg.places || "Tours • Hotel • Transfers"}</span>
+              <div className="tour-info-glass">
+                <div>
+                  <h3>{pkg.title}</h3>
+                  <p>▰ {pkg.date}</p>
                 </div>
+
+                <img className="route-map-thumb" src={pkg.routeMap} alt="Trip route map" />
               </div>
             </article>
           ))}
         </div>
       </section>
 
-      <section className="trusted-agencies-section">
-        <div className="home-section-row">
-          <div>
-            <h2>Trusted Agencies for You</h2>
-            <p>Verified partners matched to your trip style.</p>
-          </div>
-          <button type="button">View all</button>
-        </div>
+      <section className="travel-agencies">
+        <h2>Travel Agencies</h2>
+        <p>AI finds the match. Travel experts make it happen.</p>
 
-        <div className="premium-agency-carousel">
-          <article className="premium-agency-card">
-            <div className="agency-cover japan-cover">
-              <span>96% Match</span>
-            </div>
+        <div className="agency-grid-v2">
+          {travelAgencies.map((agency, index) => (
+            <article className="agency-card-v2" key={`${agency.name}-${index}`}>
+              <img src={agency.image} alt={agency.name} />
 
-            <div className="premium-agency-body">
-              <div className="premium-agency-logo">🌸</div>
-              <h3>Sakura Travels</h3>
-              <p>Japan • Korea • Visa support</p>
+              <div className="agency-body-v2">
+                <div className="agency-logo-v2">{agency.logo}</div>
+                <h3>{agency.name}</h3>
+                <p>{agency.subtitle}</p>
 
-              <div className="agency-stats">
-                <span>4.9 ★</span>
-                <span>Fast reply</span>
-                <span>Family trips</span>
+                <div className="agency-tags-v2">
+                  <span>★ 4.9</span>
+                  <span>Fast Reply</span>
+                  <span>Budget Friendly</span>
+                </div>
               </div>
-
-              <button type="button">View Agency</button>
-            </div>
-          </article>
-
-          <article className="premium-agency-card">
-            <div className="agency-cover dubai-cover">
-              <span>93% Match</span>
-            </div>
-
-            <div className="premium-agency-body">
-              <div className="premium-agency-logo">✈️</div>
-              <h3>PAPH Travel</h3>
-              <p>Dubai • Abu Dhabi • Group tours</p>
-
-              <div className="agency-stats">
-                <span>4.8 ★</span>
-                <span>Visa help</span>
-                <span>Packages</span>
-              </div>
-
-              <button type="button">View Agency</button>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section className="smart-match-final">
-        <div className="smart-match-copy">
-          <span>
-            <Sparkles size={15} /> Smart Match
-          </span>
-          <h2>Find the right trip and agency in minutes.</h2>
-          <p>
-            Answer 3 quick questions and TravAI will match you with packages,
-            agencies, and services that fit your budget.
-          </p>
-
-          <button type="button">
-            Find My Trip <ChevronRight size={18} />
-          </button>
-        </div>
-
-        <div className="smart-match-visual">
-          <div className="orbit-globe">🌍</div>
-          <div className="orbit-plane">✈️</div>
-          <div className="orbit-pin">📍</div>
+            </article>
+          ))}
         </div>
       </section>
     </div>
