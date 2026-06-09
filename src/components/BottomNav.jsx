@@ -1,4 +1,4 @@
-import { CalendarDays, Compass, Home, Search, UserRound } from "lucide-react"
+import { Home, Search, Sparkles, Map, UserRound } from "lucide-react"
 
 export default function BottomNav({
   currentScreen,
@@ -11,8 +11,8 @@ export default function BottomNav({
   const items = [
     { key: "home", label: "Home", icon: Home, onClick: onHome },
     { key: "explore", label: "Explore", icon: Search, onClick: onExplore },
-    { key: "smartmatch", label: "Smart Match", icon: Compass, onClick: onSmartMatch },
-    { key: "trips", label: "Trips", icon: CalendarDays, onClick: onTrips },
+    { key: "smartmatch", label: "AI", icon: Sparkles, onClick: onSmartMatch },
+    { key: "trips", label: "Trips", icon: Map, onClick: onTrips },
     { key: "profile", label: "Profile", icon: UserRound, onClick: onProfile },
   ]
 
