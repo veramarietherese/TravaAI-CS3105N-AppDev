@@ -1,303 +1,302 @@
-/* Budget Overview Screen */
-.budget-screen {
-  padding: 24px 22px 132px;
+* {
+  box-sizing: border-box;
+}
+
+button {
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.trip-budget-page {
+  min-height: 100%;
+  padding: 24px 18px 120px;
   background:
-    radial-gradient(circle at 10% 2%, rgba(255, 232, 242, 0.9), transparent 26%),
-    radial-gradient(circle at 92% 6%, rgba(235, 226, 255, 0.95), transparent 30%),
-    #fffefd;
+    radial-gradient(circle at 12% 4%, rgba(207, 220, 255, 0.58), transparent 30%),
+    radial-gradient(circle at 92% 8%, rgba(255, 229, 246, 0.55), transparent 32%),
+    linear-gradient(180deg, #f9fbff 0%, #f4f8ff 52%, #ffffff 100%);
+  color: #071634;
 }
 
-.budget-top {
-  display: flex;
+.trip-page-header {
+  height: 54px;
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
   align-items: center;
-  justify-content: space-between;
 }
 
-.budget-top h1 {
-  font-size: 35px;
-  letter-spacing: -1.5px;
+.trip-page-header h1 {
+  margin: 0;
+  text-align: center;
+  font-size: 18px;
+  letter-spacing: -0.5px;
+  font-weight: 900;
 }
 
-.budget-top p {
-  margin-top: 8px;
-  color: #4e5667;
-  font-size: 16px;
-}
-
-.budget-chart-btn {
-  width: 66px;
-  height: 66px;
-  border-radius: 24px;
+.trip-page-header button {
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
-  color: #8a4dff;
-  background: linear-gradient(145deg, #f7edff, #ffeef6);
-  box-shadow: 0 18px 36px rgba(123, 45, 255, 0.12);
+  color: #071634;
 }
 
-.budget-overview-card {
-  margin-top: 28px;
-  border-radius: 28px;
-  padding: 22px;
-  background: linear-gradient(145deg, #ffe8f2, #f3eaff 58%, #fff7ef);
-  box-shadow: 0 22px 55px rgba(49, 31, 88, 0.13);
+.trip-page-tabs {
+  margin: 8px -18px 18px;
+  height: 48px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-bottom: 1px solid #edf0f8;
 }
 
-.overview-card-head,
-.budget-list-head {
+.trip-page-tabs button {
+  position: relative;
+  color: #69738d;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.trip-page-tabs button.active {
+  color: #7657ff;
+}
+
+.trip-page-tabs button.active::after {
+  content: "";
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: -1px;
+  height: 3px;
+  border-radius: 999px;
+  background: #7657ff;
+}
+
+.budget-overview-panel {
+  padding: 20px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow:
+    0 18px 42px rgba(91, 111, 173, 0.13),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+.budget-panel-head,
+.budget-total-row,
+.budget-breakdown-head,
+.budget-category-top {
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
 }
 
-.overview-card-head h2,
-.budget-list-head h2 {
-  font-size: 20px;
+.budget-panel-head h2,
+.budget-breakdown-head h2 {
+  margin: 0;
+  font-size: 18px;
   letter-spacing: -0.6px;
 }
 
-.overview-card-head button,
-.budget-list-head button {
-  height: 38px;
+.budget-panel-head button {
+  height: 42px;
   padding: 0 14px;
-  border-radius: 999px;
+  border-radius: 14px;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  background: rgba(255, 255, 255, 0.76);
+  gap: 7px;
+  color: #7657ff;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 850;
+  background: #f3efff;
 }
 
-.budget-list-head button {
-  color: #8a4dff;
-  background: white;
-  box-shadow: inset 0 0 0 1.5px rgba(138, 77, 255, 0.35);
+.budget-total-row {
+  margin-top: 24px;
 }
 
-.overview-main {
-  margin-top: 28px;
-  display: grid;
-  grid-template-columns: 1fr 120px 1fr;
-  align-items: center;
-  gap: 10px;
-}
-
-.overview-main span,
-.overview-remaining span {
+.budget-total-row strong {
   display: block;
-  color: #6d7280;
-  font-size: 14px;
+  font-size: 28px;
+  letter-spacing: -1px;
 }
 
-.overview-main strong {
+.budget-total-row .used {
+  color: #7657ff;
+  text-align: right;
+}
+
+.budget-total-row span {
   display: block;
-  margin-top: 8px;
-  font-size: 22px;
-  letter-spacing: -0.7px;
+  margin-top: 5px;
+  color: #727c98;
+  font-size: 13px;
 }
 
-.budget-ring {
-  width: 108px;
-  height: 108px;
-  border-radius: 50%;
+.budget-total-row > div:last-child {
+  text-align: right;
+}
+
+.budget-main-progress {
+  height: 12px;
+  margin-top: 22px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #f7d8ef;
+}
+
+.budget-main-progress i {
+  display: block;
+  width: 40%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #d62ff4 0%, #7657ff 100%);
+}
+
+.budget-mini-grid {
+  margin-top: 18px;
   display: grid;
-  place-items: center;
-  background:
-    radial-gradient(circle, #fff6fb 55%, transparent 57%),
-    conic-gradient(#8a4dff 0 40%, #f1e7f3 40% 100%);
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
 }
 
-.budget-ring div {
-  width: 78px;
-  height: 78px;
-  border-radius: 50%;
+.budget-mini-grid article {
+  height: 86px;
+  border-radius: 18px;
   display: grid;
   place-items: center;
   align-content: center;
-  background: #fff9fd;
-}
-
-.budget-ring strong {
-  font-size: 24px;
-  line-height: 1;
-}
-
-.budget-ring span {
-  margin-top: 4px;
-  font-size: 12px;
-  color: #4e5667;
-}
-
-.overview-remaining {
-  margin-top: 26px;
-  padding-top: 22px;
-  border-top: 1px solid rgba(151, 119, 174, 0.16);
-  text-align: center;
-}
-
-.overview-remaining strong {
-  display: block;
-  margin-top: 8px;
-  color: #8a4dff;
-  font-size: 32px;
-  letter-spacing: -1.2px;
-}
-
-.budget-list-head {
-  margin-top: 34px;
-}
-
-.trip-budget-list {
-  margin-top: 16px;
-  display: grid;
-  gap: 16px;
-}
-
-.trip-budget-card {
-  min-height: 150px;
-  border-radius: 25px;
-  padding: 14px;
-  display: grid;
-  grid-template-columns: 104px 1fr;
-  gap: 16px;
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 255, 255, 0.88);
   box-shadow:
-    0 16px 36px rgba(30, 24, 16, 0.08),
-    inset 0 0 0 1px rgba(239, 232, 224, 0.86);
+    0 16px 32px rgba(91, 111, 173, 0.11),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
-.trip-budget-card img {
-  width: 104px;
-  height: 122px;
-  border-radius: 18px;
-  object-fit: cover;
+.budget-mini-grid strong {
+  font-size: 18px;
+  letter-spacing: -0.4px;
 }
 
-.trip-budget-info {
+.budget-mini-grid span {
+  margin-top: 7px;
+  color: #727c98;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.budget-breakdown-panel {
+  margin-top: 18px;
+  padding: 20px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow:
+    0 18px 42px rgba(91, 111, 173, 0.13),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+.budget-breakdown-head button {
+  color: #7657ff;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.budget-category-list {
+  margin-top: 20px;
+  display: grid;
+  gap: 18px;
+}
+
+.budget-category {
+  display: grid;
+  grid-template-columns: 42px 1fr 36px;
+  gap: 12px;
+  align-items: center;
+}
+
+.budget-category-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+}
+
+.budget-category-icon.purple {
+  color: #7657ff;
+  background: #f0edff;
+}
+
+.budget-category-icon.blue {
+  color: #2f7df6;
+  background: #edf5ff;
+}
+
+.budget-category-icon.pink {
+  color: #ff5aa5;
+  background: #fff0f7;
+}
+
+.budget-category-icon.orange {
+  color: #f6a41a;
+  background: #fff7df;
+}
+
+.budget-category-icon.green {
+  color: #23b96f;
+  background: #ecfff5;
+}
+
+.budget-category-info {
   min-width: 0;
 }
 
-.trip-budget-title {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.budget-category-top strong {
+  font-size: 14px;
 }
 
-.trip-budget-title h3 {
-  font-size: 18px;
-  letter-spacing: -0.5px;
-}
-
-.trip-budget-info p {
-  margin-top: 9px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  color: #5f6673;
+.budget-category-top span {
+  color: #68738e;
   font-size: 12px;
+  font-weight: 700;
 }
 
-.trip-budget-amount {
-  margin-top: 28px;
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-  font-size: 15px;
-}
-
-.trip-budget-amount span {
-  color: #777b82;
-}
-
-.trip-budget-amount em {
-  margin-left: auto;
-  color: #777b82;
-  font-size: 12px;
-  font-style: normal;
-}
-
-.trip-budget-bar {
+.budget-category-bar {
+  height: 6px;
   margin-top: 10px;
-  height: 7px;
   border-radius: 999px;
-  background: #ececf1;
   overflow: hidden;
+  background: #edf0f7;
 }
 
-.trip-budget-bar span {
+.budget-category-bar i {
   display: block;
   height: 100%;
   border-radius: inherit;
 }
 
-.trip-budget-bar .purple {
-  background: #8a4dff;
+.budget-category-bar .purple {
+  background: #7657ff;
 }
 
-.trip-budget-bar .pink {
-  background: #ff5b98;
+.budget-category-bar .blue {
+  background: #2f7df6;
 }
 
-.trip-budget-bar .orange {
-  background: #ffb14a;
+.budget-category-bar .pink {
+  background: #ff5aa5;
 }
 
-.trip-budget-bar .green {
-  background: #7ac943;
+.budget-category-bar .orange {
+  background: #f6bd3a;
 }
 
-.budget-tip-card {
-  margin-top: 30px;
-  min-height: 210px;
-  border-radius: 30px;
-  padding: 28px;
-  display: grid;
-  grid-template-columns: 1fr 120px;
-  gap: 16px;
-  align-items: center;
-  background: linear-gradient(145deg, #f2eaff, #ffeaf4);
-  box-shadow: 0 20px 46px rgba(49, 31, 88, 0.12);
+.budget-category-bar .green {
+  background: #23b96f;
 }
 
-.budget-tip-card h2 {
-  font-size: 20px;
-  line-height: 1.1;
-  letter-spacing: -0.7px;
-}
-
-.budget-tip-card p {
-  margin-top: 12px;
-  color: #3f4656;
-  font-size: 15px;
-  line-height: 1.45;
-}
-
-.budget-tip-card button {
-  margin-top: 20px;
-  height: 48px;
-  padding: 0 20px;
-  border-radius: 15px;
-  color: white;
-  font-size: 15px;
-  font-weight: 800;
-  background: #8a4dff;
-  box-shadow: 0 16px 28px rgba(138, 77, 255, 0.25);
-}
-
-.tip-illustration {
-  height: 125px;
-  border-radius: 32px;
-  display: grid;
-  place-items: center;
-  position: relative;
-  color: #8a4dff;
-  background: rgba(255, 255, 255, 0.45);
-}
-
-.tip-illustration svg:last-child {
-  position: absolute;
-  right: 24px;
-  top: 22px;
-  color: #ffb14a;
+.budget-category em {
+  color: #68738e;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 750;
+  text-align: right;
 }

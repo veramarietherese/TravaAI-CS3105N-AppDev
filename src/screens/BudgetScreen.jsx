@@ -1,149 +1,160 @@
 import {
-    BarChart3,
-    CalendarDays,
-    ChevronDown,
-    ChevronRight,
-    Coins,
-    Plus,
-  } from "lucide-react"
-  
-  const trips = [
-    {
-      title: "Japan Trip",
-      date: "May 15 – May 24, 2025",
-      spent: 32450,
-      budget: 80000,
-      progress: 41,
-      image:
-        "https://images.unsplash.com/photo-1490806843957-31f4c9a91c65?q=80&w=900&auto=format&fit=crop",
-      color: "purple",
-    },
-    {
-      title: "Bali Escape",
-      date: "Jun 10 – Jun 17, 2025",
-      spent: 12000,
-      budget: 35000,
-      progress: 34,
-      image:
-        "https://images.unsplash.com/photo-1537996194471-e657df975ab4?q=80&w=900&auto=format&fit=crop",
-      color: "pink",
-    },
-    {
-      title: "Cebu Getaway",
-      date: "Jul 5 – Jul 8, 2025",
-      spent: 8500,
-      budget: 20000,
-      progress: 42,
-      image:
-        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=900&auto=format&fit=crop",
-      color: "orange",
-    },
-    {
-      title: "Korea Adventure",
-      date: "Aug 20 – Aug 28, 2025",
-      spent: 19480,
-      budget: 45000,
-      progress: 43,
-      image:
-        "https://images.unsplash.com/photo-1538485399081-7191377e8241?q=80&w=900&auto=format&fit=crop",
-      color: "green",
-    },
-  ]
-  
-  export default function BudgetScreen() {
-    return (
-      <div className="scroll-area budget-screen">
-        <header className="budget-top">
+  ArrowLeft,
+  MoreHorizontal,
+  Plane,
+  Hotel,
+  Utensils,
+  Bus,
+  Ticket,
+  Download,
+} from "lucide-react"
+import "./budget.css"
+
+const breakdown = [
+  {
+    icon: <Plane size={18} />,
+    label: "Flights",
+    spent: "₱18,000",
+    budget: "₱25,000",
+    percent: 72,
+    color: "purple",
+  },
+  {
+    icon: <Hotel size={18} />,
+    label: "Hotels",
+    spent: "₱8,400",
+    budget: "₱20,000",
+    percent: 42,
+    color: "blue",
+  },
+  {
+    icon: <Utensils size={18} />,
+    label: "Food",
+    spent: "₱3,500",
+    budget: "₱10,000",
+    percent: 35,
+    color: "pink",
+  },
+  {
+    icon: <Bus size={18} />,
+    label: "Transport",
+    spent: "₱1,800",
+    budget: "₱5,000",
+    percent: 36,
+    color: "orange",
+  },
+  {
+    icon: <Ticket size={18} />,
+    label: "Activities",
+    spent: "₱600",
+    budget: "₱5,000",
+    percent: 12,
+    color: "green",
+  },
+]
+
+export default function BudgetScreen() {
+  return (
+    <div className="scroll-area trip-budget-page">
+      <header className="trip-page-header">
+        <button type="button">
+          <ArrowLeft size={22} />
+        </button>
+
+        <h1>Japan Trip</h1>
+
+        <button type="button">
+          <MoreHorizontal size={22} />
+        </button>
+      </header>
+
+      <nav className="trip-page-tabs">
+        <button>Overview</button>
+        <button>Itinerary</button>
+        <button className="active">Budget</button>
+        <button>Expenses</button>
+      </nav>
+
+      <section className="budget-overview-panel">
+        <div className="budget-panel-head">
           <div>
-            <h1>Budget</h1>
-            <p>Overview of all your trips</p>
+            <h2>Budget Overview</h2>
           </div>
-  
-          <button className="budget-chart-btn" type="button">
-            <BarChart3 size={24} />
+
+          <button type="button">
+            <Download size={16} />
+            Export
           </button>
-        </header>
-  
-        <section className="budget-overview-card">
-          <div className="overview-card-head">
-            <h2>Total Overview</h2>
-            <button type="button">
-              All Trips <ChevronDown size={15} />
-            </button>
+        </div>
+
+        <div className="budget-total-row">
+          <div>
+            <strong>₱80,000</strong>
+            <span>Total Budget</span>
           </div>
-  
-          <div className="overview-main">
-            <div>
-              <span>Total Budget</span>
-              <strong>₱180,000</strong>
-            </div>
-  
-            <div className="budget-ring">
-              <div>
-                <strong>40%</strong>
-                <span>Spent</span>
+
+          <div>
+            <strong className="used">₱32,400</strong>
+            <span>Used (40%)</span>
+          </div>
+        </div>
+
+        <div className="budget-main-progress">
+          <i />
+        </div>
+      </section>
+
+      <section className="budget-mini-grid">
+        <article>
+          <strong>₱47,600</strong>
+          <span>Remaining</span>
+        </article>
+
+        <article>
+          <strong>40%</strong>
+          <span>Used</span>
+        </article>
+
+        <article>
+          <strong>₱10,000</strong>
+          <span>Daily Avg.</span>
+        </article>
+      </section>
+
+      <section className="budget-breakdown-panel">
+        <div className="budget-breakdown-head">
+          <h2>Budget Breakdown</h2>
+          <button type="button">Edit ›</button>
+        </div>
+
+        <div className="budget-category-list">
+          {breakdown.map((item) => (
+            <article className="budget-category" key={item.label}>
+              <div className={`budget-category-icon ${item.color}`}>
+                {item.icon}
               </div>
-            </div>
-  
-            <div>
-              <span>Total Spent</span>
-              <strong>₱72,430</strong>
-            </div>
-          </div>
-  
-          <div className="overview-remaining">
-            <span>Remaining</span>
-            <strong>₱107,570</strong>
-          </div>
-        </section>
-  
-        <section className="budget-list-head">
-          <h2>Your Trips</h2>
-          <button type="button">+ Add Trip</button>
-        </section>
-  
-        <section className="trip-budget-list">
-          {trips.map((trip) => (
-            <article className="trip-budget-card" key={trip.title}>
-              <img src={trip.image} alt={trip.title} />
-  
-              <div className="trip-budget-info">
-                <div className="trip-budget-title">
-                  <h3>{trip.title}</h3>
-                  <ChevronRight size={21} />
+
+              <div className="budget-category-info">
+                <div className="budget-category-top">
+                  <strong>{item.label}</strong>
+                  <span>
+                    {item.spent} / {item.budget}
+                  </span>
                 </div>
-  
-                <p>
-                  <CalendarDays size={13} />
-                  {trip.date}
-                </p>
-  
-                <div className="trip-budget-amount">
-                  <strong>₱{trip.spent.toLocaleString()}</strong>
-                  <span>/ ₱{trip.budget.toLocaleString()}</span>
-                  <em>{trip.progress}%</em>
-                </div>
-  
-                <div className="trip-budget-bar">
-                  <span className={trip.color} style={{ width: `${trip.progress}%` }} />
+
+                <div className="budget-category-bar">
+                  <i
+                    className={item.color}
+                    style={{ width: `${item.percent}%` }}
+                  />
                 </div>
               </div>
+
+              <em>{item.percent}%</em>
             </article>
           ))}
-        </section>
-  
-        <section className="budget-tip-card">
-          <div>
-            <h2>Track smarter, travel better</h2>
-            <p>Set budgets, track expenses and make every trip count.</p>
-            <button type="button">Learn More</button>
-          </div>
-  
-          <div className="tip-illustration">
-            <Coins size={40} />
-            <Plus size={22} />
-          </div>
-        </section>
-      </div>
-    )
-  }
+        </div>
+      </section>
+    </div>
+  )
+}

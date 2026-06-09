@@ -10,78 +10,43 @@ import {
   Plane,
   ShieldCheck,
   UsersRound,
+  Plus,
+  MapPin,
+  Home,
+  Search,
+  Ticket,
+  User,
 } from "lucide-react"
+
+import {
+  Utensils,
+  Bus,
+  Bed,
+  Download,
+} from "lucide-react"
+
+import "./trips.css"
 
 const tabs = ["Overview", "Itinerary", "Budget", "Expenses"]
 
-const itinerary = [
-  {
-    time: "09:30",
-    title: "Arrive at Narita Airport",
-    place: "Narita, Chiba, Japan",
-    image:
-      "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=500&auto=format&fit=crop",
-  },
-  {
-    time: "12:00",
-    title: "Train to Tokyo",
-    place: "Narita Express",
-    image:
-      "https://images.unsplash.com/photo-1558560618-5272794d82aa?q=80&w=500&auto=format&fit=crop",
-  },
-  {
-    time: "14:00",
-    title: "Check-in at Hotel",
-    place: "Shinjuku, Tokyo",
-    image:
-      "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=500&auto=format&fit=crop",
-  },
-  {
-    time: "16:00",
-    title: "Shinjuku Gyoen National Garden",
-    place: "Shinjuku, Tokyo",
-    image:
-      "https://images.unsplash.com/photo-1526481280693-3bfa7568e0f3?q=80&w=500&auto=format&fit=crop",
-  },
-  {
-    time: "19:00",
-    title: "Dinner at Omoide Yokocho",
-    place: "Shinjuku, Tokyo",
-    image:
-      "https://images.unsplash.com/photo-1553621042-f6e147245754?q=80&w=500&auto=format&fit=crop",
-  },
-]
-
-const budgetRows = [
-  ["Flights", "₱18,000 / ₱24,000", "75%", 75],
-  ["Accommodation", "₱9,200 / ₱20,000", "46%", 46],
-  ["Food", "₱3,800 / ₱10,000", "38%", 38],
-  ["Transport", "₱1,950 / ₱5,000", "39%", 39],
-  ["Activities", "₱2,500 / ₱8,000", "31%", 31],
-  ["Shopping", "₱0 / ₱5,000", "0%", 0],
-]
-
-const expenses = [
-  ["Dhan paid", "Hotel in Tokyo", "₱12,000", "You paid"],
-  ["Lisa paid", "Team dinner", "₱2,450", ""],
-  ["Migz paid", "Suica Cards", "₱1,600", ""],
-  ["Aye paid", "Narita Express Tickets", "₱4,800", ""],
-  ["You paid", "Snacks & Drinks", "₱1,200", ""],
-]
-
 export default function TripsScreen() {
+  const [selectedTrip, setSelectedTrip] = useState(null)
   const [activeTab, setActiveTab] = useState("Overview")
+
+  if (!selectedTrip) {
+    return <TripsLanding onOpenTrip={() => setSelectedTrip("japan")} />
+  }
 
   return (
     <div className="scroll-area trip-workspace">
       <header className="trip-header">
-        <button type="button" className="trip-icon-btn">
+        <button className="trip-icon-btn" onClick={() => setSelectedTrip(null)}>
           <ArrowLeft size={20} />
         </button>
 
         <h1>Japan Trip</h1>
 
-        <button type="button" className="trip-icon-btn">
+        <button className="trip-icon-btn">
           <MoreHorizontal size={22} />
         </button>
       </header>
@@ -90,7 +55,6 @@ export default function TripsScreen() {
         {tabs.map((tab) => (
           <button
             key={tab}
-            type="button"
             className={activeTab === tab ? "active" : ""}
             onClick={() => setActiveTab(tab)}
           >
@@ -103,6 +67,158 @@ export default function TripsScreen() {
       {activeTab === "Itinerary" && <TripItinerary />}
       {activeTab === "Budget" && <TripBudget />}
       {activeTab === "Expenses" && <TripExpenses />}
+    </div>
+  )
+}
+
+function TripsLanding({ onOpenTrip }) {
+  return (
+    <div className="scroll-area trips-premium-home">
+      <header className="trips-hero-header">
+        <div>
+          <p>Hey, Dhan! 👋</p>
+          <h1>My Trips</h1>
+        </div>
+
+        <div className="trips-avatar">
+          <img src="https://api.dicebear.com/7.x/notionists/svg?seed=Dhan" alt="Dhan" />
+          <span />
+        </div>
+      </header>
+
+      <section className="ios-flight-card" onClick={onOpenTrip}>
+        <div className="flight-top">
+          <div>
+            <span>DEPARTURE</span>
+            <strong>9:00 AM</strong>
+            <h2>CEB</h2>
+            <p>Cebu</p>
+          </div>
+
+          <div>
+            <span>ARRIVAL</span>
+            <strong>2:30 PM</strong>
+            <h2>NRT</h2>
+            <p>Tokyo (Narita)</p>
+          </div>
+        </div>
+
+        <div className="sky-arc" />
+        <div className="plane-glow">✈</div>
+
+        <div className="flight-bottom">
+          <span>
+            <MapPin size={18} /> Cebu Terminal 2
+          </span>
+          <span>🎟️ Gate C6</span>
+        </div>
+      </section>
+
+      <section className="ios-trip-detail-card" onClick={onOpenTrip}>
+        <div className="trip-detail-main">
+          <div>
+            <span>Trip</span>
+            <h3>Japan<br />Adventure</h3>
+            <em>8 Days</em>
+          </div>
+
+          <div>
+            <span>Travelers</span>
+            <h3>4 Friends</h3>
+
+            <div className="ios-avatar-stack">
+              <b>👩🏻</b>
+              <b>👩🏻</b>
+              <b>👨🏻</b>
+              <b>👦🏻</b>
+              <b>+</b>
+            </div>
+          </div>
+
+          <div className="readiness-ring">
+            <span>Status</span>
+            <h3>86%</h3>
+            <p>Ready</p>
+            <i />
+          </div>
+        </div>
+
+        <div className="trip-arrival-row">
+          <span>🕘 Arriving in 5h 30m</span>
+          <strong>›</strong>
+        </div>
+      </section>
+
+      <section className="ios-stats-grid">
+        <article>
+          <span>🗓️</span>
+          <strong>8</strong>
+          <p>Days</p>
+        </article>
+
+        <article>
+          <span>👛</span>
+          <strong>₱32.4k</strong>
+          <p>Spent</p>
+        </article>
+
+        <article>
+          <span>👥</span>
+          <strong>4</strong>
+          <p>People</p>
+        </article>
+      </section>
+
+      <section className="ios-upcoming">
+        <div className="ios-section-title">
+          <div>
+            <h2>Upcoming Trips</h2>
+            <p>Tap a pass to open your workspace.</p>
+          </div>
+
+          <button type="button">View All ›</button>
+        </div>
+
+        <article className="ios-trip-pass japan" onClick={onOpenTrip}>
+          <div className="pass-icon">✈</div>
+
+          <div>
+            <h3>Japan Trip</h3>
+            <p>Tokyo • Kyoto • Osaka</p>
+
+            <div className="ios-avatar-stack small">
+              <b>👩🏻</b>
+              <b>👩🏻</b>
+              <b>👨🏻</b>
+              <b>👦🏻</b>
+              <b>+2</b>
+            </div>
+          </div>
+
+          <div className="pass-date">
+            <strong>Mar 10</strong>
+            <span>2026</span>
+            <em>Upcoming</em>
+          </div>
+        </article>
+
+        <article className="ios-trip-pass korea">
+          <div className="pass-icon">✈</div>
+
+          <div>
+            <h3>Korea Trip</h3>
+            <p>Seoul • Busan • Jeju</p>
+            <em className="draft-chip">Draft</em>
+          </div>
+
+          <div className="pass-date">
+            <strong>Apr 18</strong>
+            <span>2026</span>
+          </div>
+        </article>
+      </section>
+
+
     </div>
   )
 }
@@ -126,13 +242,8 @@ function TripOverview() {
 
         <div className="trip-summary-card">
           <div>
-            <p>
-              <CalendarDays size={15} />
-              Mar 10 – Mar 18, 2026
-            </p>
-            <p>
-              <UsersRound size={15} />8 Days • 4 Travelers
-            </p>
+            <p><CalendarDays size={15} /> Mar 10 – Mar 18, 2026</p>
+            <p><UsersRound size={15} /> 8 Days • 4 Travelers</p>
           </div>
 
           <div className="trip-member-row">
@@ -147,8 +258,6 @@ function TripOverview() {
           </div>
         </div>
       </section>
-
-      <BoardingPassCard />
 
       <section className="trip-health-card">
         <div className="trip-section-head">
@@ -184,207 +293,97 @@ function ReadinessItem({ icon, title, status, warning }) {
   )
 }
 
-function BoardingPassCard() {
-  return (
-    <section className="boarding-pass-screen">
-      <div className="boarding-hero">
-        <div className="boarding-clouds">
-          <span>☁️</span>
-          <span>✈️</span>
-          <span>🌏</span>
-        </div>
-
-        <div className="boarding-ticket">
-          <div className="qr-badge">▦</div>
-
-          <div className="route-row">
-            <div>
-              <h2>CEB</h2>
-              <p>Cebu</p>
-            </div>
-
-            <div className="plane-mid">✈</div>
-
-            <div>
-              <h2>NRT</h2>
-              <p>Tokyo</p>
-            </div>
-          </div>
-
-          <div className="ticket-divider" />
-
-          <div className="ticket-info-grid">
-            <div>
-              <span>Passenger</span>
-              <strong>Dhan Alcover</strong>
-            </div>
-
-            <div>
-              <span>Date</span>
-              <strong>10/03/2026</strong>
-            </div>
-
-            <div>
-              <span>Flight No.</span>
-              <strong>5J 5068</strong>
-            </div>
-
-            <div>
-              <span>Gate</span>
-              <strong>C6</strong>
-            </div>
-
-            <div>
-              <span>Seat</span>
-              <strong>9D</strong>
-            </div>
-
-            <div>
-              <span>Class</span>
-              <strong>Economy</strong>
-            </div>
-
-            <div>
-              <span>Boarding</span>
-              <strong>08:20</strong>
-            </div>
-
-            <div>
-              <span>Departure</span>
-              <strong>09:00</strong>
-            </div>
-
-            <div>
-              <span>Arrival</span>
-              <strong>14:30</strong>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  )
-}
-
 function TripItinerary() {
+  return <section className="placeholder-panel">Itinerary content here.</section>
+}
+function TripBudget() {
+  const budgetItems = [
+    [<Plane size={17} />, "Flights", "₱18,000 / ₱25,000", 72, "purple"],
+    [<Bed size={17} />, "Hotels", "₱8,400 / ₱20,000", 42, "blue"],
+    [<Utensils size={17} />, "Food", "₱3,500 / ₱10,000", 35, "pink"],
+    [<Bus size={17} />, "Transport", "₱1,800 / ₱5,000", 36, "orange"],
+    [<Ticket size={17} />, "Activities", "₱600 / ₱5,000", 12, "green"],
+  ]
+
   return (
     <>
-      <div className="day-scroll">
-        {["Day 1", "Day 2", "Day 3", "Day 4", "Day 5", "Day 6"].map((day, index) => (
-          <button key={day} className={index === 0 ? "active" : ""} type="button">
-            {day}
+      <section className="budget-overview-panel">
+        <div className="budget-panel-head">
+          <h2>Budget Overview</h2>
+
+          <button type="button">
+            <Download size={15} />
+            Export
           </button>
-        ))}
-      </div>
+        </div>
 
-      <section className="timeline-section">
-        <h2>Day 1 · Tue, Mar 10</h2>
+        <div className="budget-total-row">
+          <div>
+            <strong>₱80,000</strong>
+            <span>Total Budget</span>
+          </div>
 
-        <div className="timeline-list">
-          {itinerary.map((item) => (
-            <article className="timeline-item" key={item.title}>
-              <time>{item.time}</time>
-              <div className="timeline-dot" />
-              <div className="timeline-card">
-                <img src={item.image} alt={item.title} />
-                <div>
-                  <h3>{item.title}</h3>
-                  <p>{item.place}</p>
+          <div>
+            <strong className="used">₱32,400</strong>
+            <span>Used (40%)</span>
+          </div>
+        </div>
+
+        <div className="budget-main-progress">
+          <i />
+        </div>
+      </section>
+
+      <section className="budget-mini-grid">
+        <article>
+          <strong>₱47,600</strong>
+          <span>Remaining</span>
+        </article>
+
+        <article>
+          <strong>40%</strong>
+          <span>Used</span>
+        </article>
+
+        <article>
+          <strong>₱10,000</strong>
+          <span>Daily Avg.</span>
+        </article>
+      </section>
+
+      <section className="budget-breakdown-panel">
+        <div className="budget-breakdown-head">
+          <h2>Budget Breakdown</h2>
+          <button type="button">Edit ›</button>
+        </div>
+
+        <div className="budget-category-list">
+          {budgetItems.map(([icon, label, amount, percent, color]) => (
+            <article className="budget-category" key={label}>
+              <div className={`budget-category-icon ${color}`}>
+                {icon}
+              </div>
+
+              <div className="budget-category-info">
+                <div className="budget-category-top">
+                  <strong>{label}</strong>
+                  <span>{amount}</span>
+                </div>
+
+                <div className="budget-category-bar">
+                  <i className={color} style={{ width: `${percent}%` }} />
                 </div>
               </div>
+
+              <em>{percent}%</em>
             </article>
           ))}
         </div>
-
-        <button className="primary-trip-btn" type="button">
-          + Add Activity
-        </button>
-      </section>
-    </>
-  )
-}
-
-function TripBudget() {
-  return (
-    <>
-      <section className="trip-budget-summary">
-        <div className="trip-section-head">
-          <div>
-            <p>Total Budget</p>
-            <h2>₱80,000</h2>
-          </div>
-          <button type="button">Edit</button>
-        </div>
-
-        <div className="budget-split-row">
-          <div>
-            <span>Used</span>
-            <strong>₱32,450</strong>
-            <small>(41%)</small>
-          </div>
-          <div>
-            <span>Remaining</span>
-            <strong className="purple">₱47,550</strong>
-          </div>
-        </div>
-
-        <div className="wide-progress">
-          <span style={{ width: "41%" }} />
-        </div>
-      </section>
-
-      <section className="budget-breakdown">
-        <h2>Breakdown</h2>
-
-        {budgetRows.map(([label, amount, percent, width]) => (
-          <article className="budget-line" key={label}>
-            <span>{label}</span>
-            <strong>{amount}</strong>
-            <em>{percent}</em>
-            <div>
-              <i style={{ width: `${width}%` }} />
-            </div>
-          </article>
-        ))}
-      </section>
-
-      <section className="ai-budget-card">
-        <span>✨ AI Budget Insight</span>
-        <p>Adding Universal Studios Japan tickets will exceed your budget by ₱3,200.</p>
-        <button type="button">View Details</button>
       </section>
     </>
   )
 }
 
 function TripExpenses() {
-  return (
-    <>
-      <section className="expenses-top-card">
-        <div>
-          <p>Total Expenses</p>
-          <h2>₱32,450</h2>
-        </div>
-        <button type="button">+ Add Expense</button>
-      </section>
-
-      <section className="expenses-summary">
-        <p>Per person (4)</p>
-        <strong>₱8,112.50</strong>
-      </section>
-
-      <section className="expense-list">
-        {expenses.map(([person, item, amount, note]) => (
-          <article className="expense-item" key={`${person}-${item}`}>
-            <div className="expense-avatar">🧑🏻</div>
-            <div>
-              <h3>{person}</h3>
-              <p>{item}</p>
-              {note && <span>{note}</span>}
-            </div>
-            <strong>{amount}</strong>
-          </article>
-        ))}
-      </section>
-    </>
-  )
+  return <section className="placeholder-panel">Expenses content here.</section>
 }
