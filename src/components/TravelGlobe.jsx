@@ -1,24 +1,27 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import Globe from "react-globe.gl"
-import * as THREE from "three"
 import { feature } from "topojson-client"
 
-const cities = [
-  { name: "Cebu", country: "Philippines", lat: 10.3157, lng: 123.8854, color: "#7c5cff" },
-  { name: "Tokyo", country: "Japan", lat: 35.6762, lng: 139.6503, color: "#ff4fa3" },
-  { name: "Seoul", country: "Korea", lat: 37.5665, lng: 126.978, color: "#4a8dff" },
-  { name: "Bali", country: "Indonesia", lat: -8.4095, lng: 115.1889, color: "#7c5cff" },
-]
-
-const arcs = [
-  { startLat: 10.3157, startLng: 123.8854, endLat: 35.6762, endLng: 139.6503 },
-  { startLat: 35.6762, startLng: 139.6503, endLat: 37.5665, endLng: 126.978 },
-  { startLat: 10.3157, startLng: 123.8854, endLat: -8.4095, endLng: 115.1889 },
-]
-
-export default function TravelGlobe() {
+export default function TravelGlobe({ flights = [] }) {
+  const wrapRef = useRef(null)
   const globeRef = useRef(null)
   const [countries, setCountries] = useState([])
+  const [size, setSize] = useState({ width: 360, height: 330 })
+
+  useEffect(() => {
+    const observer = new ResizeObserver(([entry]) => {
+      const width = entry.contentRect.width || 360
+
+      setSize({
+        width: Math.max(width * 1.25, 360),
+        height: Math.min(Math.max(width * 0.72, 300), 430),
+      })
+    })
+
+    if (wrapRef.current) observer.observe(wrapRef.current)
+
+    return () => observer.disconnect()
+  }, [])
 
   useEffect(() => {
     fetch("https://unpkg.com/world-atlas@2/countries-110m.json")
@@ -29,71 +32,97 @@ export default function TravelGlobe() {
       .catch(() => setCountries([]))
   }, [])
 
+  const arcs = useMemo(() => {
+    return flights.map((flight) => ({
+      startLat: flight.origin.lat,
+      startLng: flight.origin.lng,
+      endLat: flight.destination.lat,
+      endLng: flight.destination.lng,
+    }))
+  }, [flights])
+
+  const points = useMemo(() => {
+    const map = new Map()
+
+    flights.forEach((flight) => {
+      map.set(flight.origin.code, flight.origin)
+      map.set(flight.destination.code, flight.destination)
+    })
+
+    return [...map.values()].map((airport, index) => ({
+      ...airport,
+      color: ["#7c5cff", "#ff4fa3", "#4a8dff"][index % 3],
+      label: `${airport.city}\n${airport.country}`,
+    }))
+  }, [flights])
+
   useEffect(() => {
     if (!globeRef.current) return
 
-    const controls = globeRef.current.controls()
-    controls.autoRotate = true
-    controls.autoRotateSpeed = 0.45
-    controls.enableZoom = false
-    controls.enablePan = false
+    const controls = globeRef.current.controls?.()
 
-    globeRef.current.pointOfView(
-      { lat: 20, lng: 110, altitude: 1.65 },
+    if (controls) {
+      controls.autoRotate = true
+      controls.autoRotateSpeed = 0.35
+      controls.enableZoom = false
+      controls.enablePan = false
+    }
+
+    globeRef.current.pointOfView?.(
+      { lat: 18, lng: 112, altitude: 1.85 },
       900
     )
-
-    const material = globeRef.current.globeMaterial()
-    material.color = new THREE.Color("#8ea8ff")
-    material.emissive = new THREE.Color("#94aaff")
-    material.emissiveIntensity = 0.4
-    material.shininess = 0.9
-  }, [countries])
+  }, [countries, size])
 
   return (
-    <div className="premium-globe-wrap">
+    <div className="premium-globe-wrap" ref={wrapRef}>
       <div className="premium-globe-glow" />
 
       <Globe
         ref={globeRef}
-        width={760}
-        height={430}
+        width={size.width}
+        height={size.height}
         backgroundColor="rgba(0,0,0,0)"
+        globeImageUrl={null}
+        bumpImageUrl={null}
+        showGlobe={false}
         showAtmosphere
         atmosphereColor="#ffffff"
-        atmosphereAltitude={0.18}
+        atmosphereAltitude={0.28}
         polygonsData={countries}
-        polygonCapColor={() => "rgba(255,255,255,0.82)"}
-        polygonSideColor={() => "rgba(255,255,255,0.08)"}
-        polygonStrokeColor={() => "rgba(255,255,255,0.14)"}
-        polygonAltitude={0.008}
+        polygonCapColor={() => "rgba(255,255,255,0.78)"}
+        polygonSideColor={() => "rgba(255,255,255,0.05)"}
+        polygonStrokeColor={() => "rgba(255,255,255,0.22)"}
+        polygonAltitude={0.006}
         arcsData={arcs}
         arcStartLat="startLat"
         arcStartLng="startLng"
         arcEndLat="endLat"
         arcEndLng="endLng"
         arcColor={() => "rgba(255,255,255,0.95)"}
-        arcDashLength={0.08}
-        arcDashGap={0.035}
-        arcDashAnimateTime={2600}
-        arcStroke={1.45}
-        arcAltitude={0.2}
-        pointsData={cities}
+        arcDashLength={0.07}
+        arcDashGap={0.04}
+        arcDashAnimateTime={2400}
+        arcStroke={1.35}
+        arcAltitude={0.18}
+        pointsData={points}
         pointLat="lat"
         pointLng="lng"
         pointColor={(d) => d.color}
-        pointAltitude={0.035}
-        pointRadius={0.36}
-        labelsData={cities}
+        pointAltitude={0.04}
+        pointRadius={0.34}
+        labelsData={points}
         labelLat="lat"
         labelLng="lng"
-        labelAltitude={0.08}
-        labelSize={1.05}
-        labelDotRadius={0.28}
+        labelAltitude={0.075}
+        labelText={(d) => d.label}
         labelColor={(d) => d.color}
-        labelText={(d) => `${d.name}\n${d.country}`}
-        labelResolution={2}
+        labelSize={0.9}
+        labelDotRadius={0.25}
       />
     </div>
   )
 }
+
+import world from "../data/countries-110m.json"
+
