@@ -19,6 +19,7 @@ import TripsScreen from "./screens/TripsScreen"
 import ProfileScreen from "./screens/ProfileScreen"
 import SmartMatchScreen from "./screens/SmartMatchScreen"
 import TravelGlobe from "./components/TravelGlobe"
+import AIChatScreen from "./screens/AIChatScreen"
 
 
 import {
@@ -99,6 +100,7 @@ export default function App() {
   const goToTrips = () => setCurrentScreen("trips")
   const goToSmartMatch = () => setCurrentScreen("smartmatch")
   const goToProfile = () => setCurrentScreen("profile")
+  const goToAIChat = () => setCurrentScreen("aichat")
 
   return (
     <main className="app-shell">
@@ -110,22 +112,28 @@ export default function App() {
         ) : currentScreen === "trips" ? (
           <TripsScreen />
         ) : currentScreen === "smartmatch" ? (
-          <SmartMatchScreen />
+          <SmartMatchScreen onStartChat={goToAIChat} />
         ) : currentScreen === "profile" ? (
           <ProfileScreen />
+        ) : currentScreen === "aichat" ? (
+          <AIChatScreen onBack={() => setCurrentScreen("smartmatch")} />
         ) : (
           <HomeScreen onDiscover={goToExplore} />
         )
       }
+
+      <ChatWidget />
   
-      <BottomNav
-        currentScreen={currentScreen}
-        onHome={goToHome}
-        onExplore={goToExplore}
-        onTrips={goToTrips}
-        onSmartMatch={goToSmartMatch}
-        onProfile={goToProfile}
-      />
+      {currentScreen !== "aichat" && (
+        <BottomNav
+          currentScreen={currentScreen}
+          onHome={goToHome}
+          onExplore={goToExplore}
+          onTrips={goToTrips}
+          onSmartMatch={goToSmartMatch}
+          onProfile={goToProfile}
+        />
+      )}
     </section>
   </main>
   )

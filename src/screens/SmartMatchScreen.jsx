@@ -9,7 +9,7 @@ import {
     Users,
   } from "lucide-react"
   
-  export default function SmartMatchScreen() {
+  export default function SmartMatchScreen({ onStartChat }) {
     return (
       <div className="scroll-area smartmatch-screen">
         <section className="smartmatch-hero">
@@ -31,7 +31,7 @@ import {
             We'll match you with destinations, itineraries and verified agencies.
           </p>
   
-          <button type="button">
+          <button type="button" onClick={onStartChat}>
             Start Smart Match
             <ArrowRight size={18} />
           </button>
