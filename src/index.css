@@ -72,6 +72,7 @@ body,
 }
 
 .phone {
+  position: relative;
   width: 100%;
   min-height: 100dvh;
   height: 100dvh;
@@ -543,6 +544,7 @@ body,
 /* GLOBAL RESPONSIVE FIXES */
 
 .phone {
+  position: relative;
   width: 100%;
   min-height: 100dvh;
   height: 100dvh;
