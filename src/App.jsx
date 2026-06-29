@@ -97,6 +97,7 @@ const starterFlights = [
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState("login")
+  const [agencySuggestions, setAgencySuggestions] = useState([])
 
   const goToHome = () => setCurrentScreen("home")
   const goToExplore = () => setCurrentScreen("explore")
@@ -106,6 +107,17 @@ export default function App() {
   const goToAIChat = () => setCurrentScreen("aichat")
   const goToAgencyDashboard = () => setCurrentScreen("agency-dashboard")
   const goToLogin = () => setCurrentScreen("login")
+
+  const handleSuggestionToAgency = async (suggestion) => {
+    const recommendation = {
+      id: `suggestion-${Date.now()}`,
+      source: "AI recommendation",
+      ...suggestion,
+    }
+
+    setAgencySuggestions((current) => [recommendation, ...current])
+    return { recommendation }
+  }
 
   return (
     <main className="app-shell">
@@ -121,9 +133,16 @@ export default function App() {
         ) : currentScreen === "profile" ? (
           <ProfileScreen onLogout={goToLogin} />
         ) : currentScreen === "aichat" ? (
-          <AIChatScreen onBack={() => setCurrentScreen("smartmatch")} />
+          <AIChatScreen
+            onBack={() => setCurrentScreen("smartmatch")}
+            onSendSuggestion={handleSuggestionToAgency}
+          />
         ) : currentScreen === "agency-dashboard" ? (
-          <AgencyDashboardScreen onBack={goToHome} onLogout={goToLogin} />
+          <AgencyDashboardScreen
+            onBack={goToHome}
+            onLogout={goToLogin}
+            suggestions={agencySuggestions}
+          />
         ) : currentScreen === "login" ? (
           <LoginChoiceScreen onUser={goToHome} onAgency={goToAgencyDashboard} onAdmin={goToProfile} />
         ) : (

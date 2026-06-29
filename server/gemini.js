@@ -27,5 +27,17 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
+app.post("/api/recommendation", async (req, res) => {
+  const recommendation = req.body;
+  if (!recommendation || !recommendation.title) {
+    return res.status(400).json({ error: "Invalid recommendation payload" });
+  }
+
+  // In a real app, we'd persist this to a database or send to an agency backend.
+  console.log("Recommendation received:", recommendation);
+
+  res.json({ recommendation });
+});
+
 const PORT = 3001;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

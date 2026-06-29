@@ -42,7 +42,7 @@ const initialPackages = [
   },
 ]
 
-export default function AgencyDashboardScreen({ onBack, onLogout }) {
+export default function AgencyDashboardScreen({ onBack, onLogout, suggestions = [] }) {
   const [packages, setPackages] = useState(initialPackages)
   const [editingId, setEditingId] = useState(null)
   const [feedback, setFeedback] = useState("AI is ready to draft package ideas in seconds.")
@@ -202,6 +202,45 @@ export default function AgencyDashboardScreen({ onBack, onLogout }) {
           </article>
         </div>
       </section>
+
+      {suggestions.length > 0 && (
+        <section className="agency-panel">
+          <div className="agency-panel-header">
+            <div>
+              <p className="agency-eyebrow">AI handoff</p>
+              <h3>Suggestions from users</h3>
+            </div>
+          </div>
+
+          {suggestions.map((suggestion) => (
+            <article className="agency-package-card" key={suggestion.id}>
+              <div className="agency-package-main">
+                <div className="agency-package-heading">
+                  <h4>{suggestion.title}</h4>
+                  <span className="agency-status ai-draft">{suggestion.source}</span>
+                </div>
+                <div className="agency-package-meta">
+                  <span>
+                    <MapPin size={14} />
+                    {suggestion.location}
+                  </span>
+                  <span>
+                    <CalendarDays size={14} />
+                    {suggestion.duration}
+                  </span>
+                  <span>
+                    <DollarSign size={14} />
+                    {suggestion.price}
+                  </span>
+                </div>
+                <p style={{ marginTop: 8, color: "#6b7280", fontSize: 13 }}>
+                  {suggestion.summary}
+                </p>
+              </div>
+            </article>
+          ))}
+        </section>
+      )}
 
       <section className="agency-panel">
         <div className="agency-panel-header">
