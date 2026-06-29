@@ -20,6 +20,7 @@ import ProfileScreen from "./screens/ProfileScreen"
 import SmartMatchScreen from "./screens/SmartMatchScreen"
 import TravelGlobe from "./components/TravelGlobe"
 import AIChatScreen from "./screens/AIChatScreen"
+import ChatWidget from "./components/ChatWidget"
 
 
 import {
