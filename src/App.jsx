@@ -21,6 +21,8 @@ import SmartMatchScreen from "./screens/SmartMatchScreen"
 import TravelGlobe from "./components/TravelGlobe"
 import AIChatScreen from "./screens/AIChatScreen"
 import ChatWidget from "./components/ChatWidget"
+import AgencyDashboardScreen from "./screens/AgencyDashboardScreen"
+import LoginChoiceScreen from "./screens/LoginChoiceScreen"
 
 
 import {
@@ -94,7 +96,7 @@ const starterFlights = [
 ]
 
 export default function App() {
-  const [currentScreen, setCurrentScreen] = useState("home")
+  const [currentScreen, setCurrentScreen] = useState("login")
 
   const goToHome = () => setCurrentScreen("home")
   const goToExplore = () => setCurrentScreen("explore")
@@ -102,6 +104,8 @@ export default function App() {
   const goToSmartMatch = () => setCurrentScreen("smartmatch")
   const goToProfile = () => setCurrentScreen("profile")
   const goToAIChat = () => setCurrentScreen("aichat")
+  const goToAgencyDashboard = () => setCurrentScreen("agency-dashboard")
+  const goToLogin = () => setCurrentScreen("login")
 
   return (
     <main className="app-shell">
@@ -115,17 +119,21 @@ export default function App() {
         ) : currentScreen === "smartmatch" ? (
           <SmartMatchScreen onStartChat={goToAIChat} />
         ) : currentScreen === "profile" ? (
-          <ProfileScreen />
+          <ProfileScreen onLogout={goToLogin} />
         ) : currentScreen === "aichat" ? (
           <AIChatScreen onBack={() => setCurrentScreen("smartmatch")} />
+        ) : currentScreen === "agency-dashboard" ? (
+          <AgencyDashboardScreen onBack={goToHome} onLogout={goToLogin} />
+        ) : currentScreen === "login" ? (
+          <LoginChoiceScreen onUser={goToHome} onAgency={goToAgencyDashboard} onAdmin={goToProfile} />
         ) : (
-          <HomeScreen onDiscover={goToExplore} />
+          <HomeScreen onDiscover={goToExplore} onOpenAgencyDashboard={goToAgencyDashboard} />
         )
       }
 
       <ChatWidget />
   
-      {currentScreen !== "aichat" && (
+      {currentScreen !== "aichat" && currentScreen !== "login" && (
         <BottomNav
           currentScreen={currentScreen}
           onHome={goToHome}
@@ -140,7 +148,7 @@ export default function App() {
   )
 }
 
-function HomeScreen({ onDiscover }) {
+function HomeScreen({ onDiscover, onOpenAgencyDashboard }) {
   const progress = Math.round((trip.spent / trip.budget) * 100)
 
   const [flights, setFlights] = useState(() => {
@@ -336,6 +344,7 @@ function HomeScreen({ onDiscover }) {
               key={action.title}
               onClick={() => {
                 if (action.title.includes("Explore")) onDiscover()
+                if (action.title.includes("Deals") || action.title.includes("Plans")) onOpenAgencyDashboard()
               }}
             >
               <img src={action.image} alt="" />

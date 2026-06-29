@@ -10,7 +10,7 @@ import {
     Sparkles,
   } from "lucide-react"
   
-  export default function ProfileScreen() {
+  export default function ProfileScreen({ onLogout }) {
     return (
       <div className="scroll-area profile-screen">
         <header className="profile-topbar">
@@ -85,6 +85,16 @@ import {
           <ProfileRow icon={<Heart size={20} />} title="Saved Packages" value="12 saved" />
           <ProfileRow icon={<MapPin size={20} />} title="Visited Places" value="View map" />
           <ProfileRow icon={<ShieldCheck size={20} />} title="Travel Documents" value="Secured" />
+        </section>
+
+        <section style={{ padding: 20 }}>
+          <button
+            type="button"
+            className="profile-logout-btn"
+            onClick={() => onLogout && onLogout()}
+          >
+            Logout
+          </button>
         </section>
       </div>
     )

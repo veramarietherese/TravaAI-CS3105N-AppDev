@@ -1,0 +1,43 @@
+.login-choice-screen {
+  padding: calc(env(safe-area-inset-top) + 40px) 20px 140px;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+}
+
+.login-header h1 {
+  font-size: 28px;
+  font-weight: 900;
+  margin-bottom: 6px;
+}
+
+.login-header p {
+  color: #6b7280;
+  margin-bottom: 18px;
+}
+
+.login-options {
+  display: grid;
+  gap: 12px;
+}
+
+.login-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px;
+  border-radius: 16px;
+  font-weight: 800;
+  text-align: left;
+}
+
+.login-card small {
+  font-weight: 600;
+  color: #475569;
+}
+
+.login-card.lavender { background: linear-gradient(135deg,#f3ecff,#fff); }
+.login-card.pink { background: linear-gradient(135deg,#fff0f7,#fff); }
+.login-card.softblue { background: linear-gradient(135deg,#f0f7ff,#fff); }
+
+@media (max-width:480px){
+  .login-card{padding:14px}
+}
