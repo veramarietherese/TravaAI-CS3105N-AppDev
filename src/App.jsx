@@ -121,8 +121,6 @@ export default function App() {
           <HomeScreen onDiscover={goToExplore} />
         )
       }
-
-      <ChatWidget />
   
       {currentScreen !== "aichat" && (
         <BottomNav
