@@ -1,4 +1,11 @@
-import { Home, Search, Sparkles, Map, UserRound } from "lucide-react"
+import {
+  Home,
+  Search,
+  Sparkles,
+  Map,
+  UserRound,
+  MessageSquare,
+} from "lucide-react";
 
 export default function BottomNav({
   currentScreen,
@@ -7,19 +14,21 @@ export default function BottomNav({
   onTrips,
   onSmartMatch,
   onProfile,
+  onChat,
 }) {
   const items = [
     { key: "home", label: "Home", icon: Home, onClick: onHome },
     { key: "explore", label: "Explore", icon: Search, onClick: onExplore },
     { key: "smartmatch", label: "AI", icon: Sparkles, onClick: onSmartMatch },
+    { key: "chat", label: "Chats", icon: MessageSquare, onClick: onChat },
     { key: "trips", label: "Trips", icon: Map, onClick: onTrips },
     { key: "profile", label: "Profile", icon: UserRound, onClick: onProfile },
-  ]
+  ];
 
   return (
     <nav className="bottom-nav">
       {items.map((item) => {
-        const Icon = item.icon
+        const Icon = item.icon;
 
         return (
           <button
@@ -31,8 +40,8 @@ export default function BottomNav({
             <Icon size={19} strokeWidth={2.3} />
             <span>{item.label}</span>
           </button>
-        )
+        );
       })}
     </nav>
-  )
+  );
 }
