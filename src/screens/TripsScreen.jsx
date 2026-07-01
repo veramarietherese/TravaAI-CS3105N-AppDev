@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   ArrowLeft,
   CalendarDays,
@@ -26,6 +26,7 @@ import {
 } from "lucide-react"
 
 import "./trips.css"
+import { getFlightSchedule } from "../lib/flightService"
 
 const tabs = ["Overview", "Itinerary", "Budget", "Expenses"]
 
@@ -72,12 +73,75 @@ export default function TripsScreen() {
 }
 
 function TripsLanding({ onOpenTrip }) {
+  const [flight, setFlight] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [usingFallback, setUsingFallback] = useState(false)
+
+  useEffect(() => {
+    let mounted = true
+
+    async function load() {
+      const fallback = {
+        departureTime: "9:00 AM",
+        arrivalTime: "2:30 PM",
+        originCode: "CEB",
+        originName: "Cebu",
+        destCode: "NRT",
+        destName: "Tokyo (Narita)",
+        terminal: "Cebu Terminal 2",
+        gate: "Gate C6",
+      }
+
+      try {
+        const debugEnabled = import.meta.env.DEV && import.meta.env.VITE_AIRLABS_DEBUG === "true"
+        if (!debugEnabled) {
+          if (mounted) {
+            setFlight(fallback)
+            setUsingFallback(true)
+          }
+          return
+        }
+
+        const now = Math.floor(Date.now() / 1000)
+        const twelveHours = now + 60 * 60 * 12
+        const schedules = await getFlightSchedule("CEB", now, twelveHours)
+        const first = schedules && schedules.length ? schedules[0] : null
+
+        if (mounted) {
+          setFlight(first || fallback)
+          setUsingFallback(!first)
+        }
+      } catch (err) {
+        console.error("Flight schedule load failed", err)
+        if (mounted) {
+          setFlight(fallback)
+          setUsingFallback(true)
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false)
+        }
+      }
+    }
+
+    load()
+
+    return () => {
+      mounted = false
+    }
+  }, [])
+
   return (
     <div className="scroll-area trips-premium-home">
       <header className="trips-hero-header">
         <div>
           <p>Hey, Dhan! 👋</p>
           <h1>My Trips</h1>
+          <p className="flight-status-note">
+            {loading
+              ? "Loading flight details..."
+              : "Using demo schedule to preserve AirLabs usage"}
+          </p>
         </div>
 
         <div className="trips-avatar">
@@ -90,16 +154,16 @@ function TripsLanding({ onOpenTrip }) {
         <div className="flight-top">
           <div>
             <span>DEPARTURE</span>
-            <strong>9:00 AM</strong>
-            <h2>CEB</h2>
-            <p>Cebu</p>
+            <strong>{flight?.departureTime || "—"}</strong>
+            <h2>{flight?.originCode || "—"}</h2>
+            <p>{flight?.originName || "—"}</p>
           </div>
 
           <div>
             <span>ARRIVAL</span>
-            <strong>2:30 PM</strong>
-            <h2>NRT</h2>
-            <p>Tokyo (Narita)</p>
+            <strong>{flight?.arrivalTime || "—"}</strong>
+            <h2>{flight?.destCode || "—"}</h2>
+            <p>{flight?.destName || "—"}</p>
           </div>
         </div>
 
@@ -108,9 +172,9 @@ function TripsLanding({ onOpenTrip }) {
 
         <div className="flight-bottom">
           <span>
-            <MapPin size={18} /> Cebu Terminal 2
+            <MapPin size={18} /> {flight?.terminal || "—"}
           </span>
-          <span>🎟️ Gate C6</span>
+          <span>🎟️ {flight?.gate || "—"}</span>
         </div>
       </section>
 
