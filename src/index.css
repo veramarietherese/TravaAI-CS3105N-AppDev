@@ -115,8 +115,22 @@ body,
 .home-v2-profile {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 14px;
+
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
 }
+
+.home-v2-profile:hover {
+  opacity: 0.9;
+}
+
+.home-v2-profile:active {
+  transform: scale(0.98);
+} 
 
 .home-v2-avatar {
   width: 68px;
