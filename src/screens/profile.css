@@ -245,3 +245,38 @@
     color: #667085;
     font-size: 12px;
   }
+
+  .logout-btn {
+    width: 100%;
+    margin-top: 26px;
+
+    height: 58px;
+
+    border: none;
+    border-radius: 18px;
+
+    background: linear-gradient(
+        135deg,
+        #ff5d86,
+        #ff7d61
+    );
+
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 14px 28px rgba(255,95,134,.28);
+
+    transition: .25s;
+}
+
+.logout-btn:hover{
+    transform: translateY(-2px);
+}
+
+.logout-btn:active{
+    transform: scale(.98);
+}
