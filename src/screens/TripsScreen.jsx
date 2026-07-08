@@ -1,37 +1,34 @@
 import { useState } from "react"
 import {
   ArrowLeft,
+  Bed,
+  Bus,
   CalendarDays,
   CheckCircle2,
+  ChevronRight,
   CloudSun,
+  Download,
   FileText,
   Hotel,
+  MapPin,
   MoreHorizontal,
   Plane,
   ShieldCheck,
-  UsersRound,
-  Plus,
-  MapPin,
-  Home,
-  Search,
   Ticket,
-  User,
-} from "lucide-react"
-
-import {
+  UsersRound,
   Utensils,
-  Bus,
-  Bed,
-  Download,
 } from "lucide-react"
 
 import "./trips.css"
+import BudgetScreen from "./BudgetScreen"
+import TripItinerary, { createPlaceholderItinerary } from "./TripItinerary"
 
 const tabs = ["Overview", "Itinerary", "Budget", "Expenses"]
 
 export default function TripsScreen() {
   const [selectedTrip, setSelectedTrip] = useState(null)
   const [activeTab, setActiveTab] = useState("Overview")
+  const [itinerary, setItinerary] = useState(() => createPlaceholderItinerary())
 
   if (!selectedTrip) {
     return <TripsLanding onOpenTrip={() => setSelectedTrip("japan")} />
@@ -63,9 +60,13 @@ export default function TripsScreen() {
         ))}
       </nav>
 
-      {activeTab === "Overview" && <TripOverview />}
-      {activeTab === "Itinerary" && <TripItinerary />}
-      {activeTab === "Budget" && <TripBudget />}
+      {activeTab === "Overview" && <TripOverview itinerary={itinerary} />}
+
+      {activeTab === "Itinerary" && (
+        <TripItinerary itinerary={itinerary} onChange={setItinerary} />
+      )}
+
+{activeTab === "Budget" && <BudgetScreen />}
       {activeTab === "Expenses" && <TripExpenses />}
     </div>
   )
@@ -81,7 +82,10 @@ function TripsLanding({ onOpenTrip }) {
         </div>
 
         <div className="trips-avatar">
-          <img src="https://api.dicebear.com/7.x/notionists/svg?seed=Dhan" alt="Dhan" />
+          <img
+            src="https://api.dicebear.com/7.x/notionists/svg?seed=Dhan"
+            alt="Dhan"
+          />
           <span />
         </div>
       </header>
@@ -118,7 +122,11 @@ function TripsLanding({ onOpenTrip }) {
         <div className="trip-detail-main">
           <div>
             <span>Trip</span>
-            <h3>Japan<br />Adventure</h3>
+            <h3>
+              Japan
+              <br />
+              Adventure
+            </h3>
             <em>8 Days</em>
           </div>
 
@@ -217,8 +225,6 @@ function TripsLanding({ onOpenTrip }) {
           </div>
         </article>
       </section>
-
-
     </div>
   )
 }
@@ -226,59 +232,193 @@ function TripsLanding({ onOpenTrip }) {
 function TripOverview() {
   return (
     <>
-      <section className="trip-map-card">
-        <div className="map-bg">
-          <span className="map-label tokyo">Tokyo</span>
-          <span className="map-label hakone">Hakone</span>
-          <span className="map-label kyoto">Kyoto</span>
-          <span className="map-label osaka">Osaka</span>
-
-          <div className="route-line" />
-          <span className="route-dot dot-1">1</span>
-          <span className="route-dot dot-2">2</span>
-          <span className="route-dot dot-3">3</span>
-          <span className="route-dot dot-4">4</span>
-        </div>
-
-        <div className="trip-summary-card">
-          <div>
-            <p><CalendarDays size={15} /> Mar 10 – Mar 18, 2026</p>
-            <p><UsersRound size={15} /> 8 Days • 4 Travelers</p>
+      <section className="premium-trip-hero">
+        <div className="premium-map">
+          <div className="flight-glass">
+            <Plane size={28} />
+            <div>
+              <h3>CEB → NRT</h3>
+              <p>Mar 10, 9:00 AM – 2:30 PM</p>
+              <span>On Time</span>
+            </div>
           </div>
 
-          <div className="trip-member-row">
+          <span className="route-city city-tokyo">1 Tokyo</span>
+          <span className="route-city city-osaka">2 Osaka</span>
+          <span className="route-city city-kyoto">3 Kyoto</span>
+          <div className="premium-route-line" />
+        </div>
+
+        <div className="boarding-glass-card">
+          <div>
+            <small>Terminal</small>
+            <strong>2</strong>
+          </div>
+
+          <div>
+            <small>Gate</small>
+            <strong>C6</strong>
+          </div>
+
+          <div>
+            <small>Seat</small>
+            <strong>12A</strong>
+          </div>
+
+          <button type="button">
+            <Ticket size={17} />
+            View Boarding Pass
+          </button>
+        </div>
+
+        <div className="trip-date-glass">
+          <div>
+            <small>MAR</small>
+            <strong>10</strong>
+            <small>TUE</small>
+          </div>
+
+          <section>
+            <h3>Travelers</h3>
             <div className="mini-members">
               <span>🧑🏻</span>
               <span>👩🏻</span>
               <span>👨🏻</span>
               <span>👩🏻</span>
+              <span>+1</span>
             </div>
+          </section>
 
-            <button type="button">Invite</button>
-          </div>
+          <button type="button">
+            <UsersRound size={16} />
+            Invite
+          </button>
         </div>
       </section>
 
-      <section className="trip-health-card">
-        <div className="trip-section-head">
+      <section className="premium-readiness-card">
+        <div className="readiness-top">
+          <div className="readiness-circle">
+            <strong>86%</strong>
+            <span>Ready</span>
+          </div>
+
           <div>
             <h2>Trip Readiness</h2>
-            <p>All good! Your trip is ready to go.</p>
+            <em>Great progress!</em>
+            <p>You’re all set for an amazing trip!</p>
+
+            <div className="readiness-progress">
+              <i />
+            </div>
+
+            <small>✨ 4 more to reach 100%</small>
           </div>
-          <span>86%</span>
+
+          <button type="button" className="improve-readiness-btn">
+            Improve Readiness
+            <ChevronRight size={18} />
+          </button>
         </div>
 
-        <div className="readiness-grid">
-          <ReadinessItem icon={<Plane size={17} />} title="Flights" status="Confirmed" />
-          <ReadinessItem icon={<Hotel size={17} />} title="Hotels" status="Confirmed" />
-          <ReadinessItem icon={<FileText size={17} />} title="Visa" status="Pending" warning />
-          <ReadinessItem icon={<CheckCircle2 size={17} />} title="Budget" status="Within Budget" />
-          <ReadinessItem icon={<CloudSun size={17} />} title="Weather" status="Good" />
-          <ReadinessItem icon={<ShieldCheck size={17} />} title="Insurance" status="Added" />
+        <div className="readiness-grid premium">
+          <ReadinessItem
+            icon={<Plane size={18} />}
+            title="Flights"
+            status="Confirmed"
+          />
+          <ReadinessItem
+            icon={<Hotel size={18} />}
+            title="Hotels"
+            status="Confirmed"
+          />
+          <ReadinessItem
+            icon={<FileText size={18} />}
+            title="Visa"
+            status="Pending"
+            warning
+          />
+          <ReadinessItem
+            icon={<CheckCircle2 size={18} />}
+            title="Budget"
+            status="Within Budget"
+          />
+          <ReadinessItem
+            icon={<CloudSun size={18} />}
+            title="Weather"
+            status="Good"
+          />
+          <ReadinessItem
+            icon={<ShieldCheck size={18} />}
+            title="Insurance"
+            status="Added"
+          />
         </div>
+      </section>
+
+      <section className="premium-quick-card">
+        <h2>Quick Access</h2>
+
+        <div className="premium-quick-grid">
+          <button type="button">
+            <CalendarDays size={24} />
+            <strong>Checklist</strong>
+            <span>6 items</span>
+          </button>
+
+          <button type="button">
+            <FileText size={24} />
+            <strong>Notepad</strong>
+            <span>3 notes</span>
+          </button>
+
+          <button type="button">
+            <CoinsIcon />
+            <strong>Expenses</strong>
+            <span>₱32.4k</span>
+          </button>
+
+          <button type="button">
+            <MapPin size={24} />
+            <strong>Itinerary</strong>
+            <span>View plan</span>
+          </button>
+
+          <button type="button">
+            <FileText size={24} />
+            <strong>Documents</strong>
+            <span>5 saved</span>
+          </button>
+        </div>
+      </section>
+
+      <section className="premium-upcoming-card">
+        <div>
+          <h2>Upcoming</h2>
+          <button type="button">View All</button>
+        </div>
+
+        <article>
+          <img
+            src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?q=80&w=900&auto=format&fit=crop"
+            alt="Tokyo"
+          />
+
+          <div>
+            <h3>Tokyo, Japan</h3>
+            <p>Explore Shinjuku & Shibuya</p>
+            <span>📍 3 activities planned</span>
+          </div>
+
+          <ChevronRight size={22} />
+        </article>
       </section>
     </>
   )
+}
+
+function CoinsIcon() {
+  return <span className="peso-icon">₱</span>
 }
 
 function ReadinessItem({ icon, title, status, warning }) {
@@ -293,9 +433,6 @@ function ReadinessItem({ icon, title, status, warning }) {
   )
 }
 
-function TripItinerary() {
-  return <section className="placeholder-panel">Itinerary content here.</section>
-}
 function TripBudget() {
   const budgetItems = [
     [<Plane size={17} />, "Flights", "₱18,000 / ₱25,000", 72, "purple"],
@@ -360,9 +497,7 @@ function TripBudget() {
         <div className="budget-category-list">
           {budgetItems.map(([icon, label, amount, percent, color]) => (
             <article className="budget-category" key={label}>
-              <div className={`budget-category-icon ${color}`}>
-                {icon}
-              </div>
+              <div className={`budget-category-icon ${color}`}>{icon}</div>
 
               <div className="budget-category-info">
                 <div className="budget-category-top">

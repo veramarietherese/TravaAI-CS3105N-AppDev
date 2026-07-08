@@ -822,3 +822,350 @@ button {
   font-weight: 800;
 }
 
+
+.premium-trip-hero {
+  margin-top: 18px;
+  position: relative;
+  border-radius: 30px;
+  overflow: hidden;
+  background: white;
+  box-shadow: 0 24px 60px rgba(27, 35, 70, 0.14);
+}
+
+.premium-map {
+  position: relative;
+  height: 310px;
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,.12), rgba(255,255,255,.62)),
+    url("https://images.unsplash.com/photo-1492571350019-22de08371fd3?q=80&w=1200&auto=format&fit=crop");
+  background-size: cover;
+  background-position: center;
+}
+
+.flight-glass {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  width: 230px;
+  padding: 18px;
+  border-radius: 22px;
+  display: flex;
+  gap: 14px;
+  color: white;
+  background: rgba(16, 24, 48, 0.52);
+  backdrop-filter: blur(18px);
+}
+
+.flight-glass h3 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.flight-glass p {
+  margin: 6px 0;
+  font-size: 13px;
+}
+
+.flight-glass span {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #25c66b;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.premium-route-line {
+  position: absolute;
+  right: 110px;
+  top: 92px;
+  width: 280px;
+  height: 130px;
+  border-top: 4px dashed #7657ff;
+  border-left: 4px dashed #7657ff;
+  border-radius: 60%;
+  transform: rotate(-18deg);
+}
+
+.route-city {
+  position: absolute;
+  z-index: 2;
+  padding: 8px 12px;
+  border-radius: 999px;
+  color: white;
+  background: #7657ff;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.city-tokyo { right: 92px; top: 72px; }
+.city-osaka { right: 245px; top: 145px; }
+.city-kyoto { left: 72px; bottom: 82px; }
+
+.boarding-glass-card,
+.trip-date-glass {
+  margin: -64px 22px 0;
+  position: relative;
+  z-index: 3;
+  border-radius: 24px;
+  padding: 18px;
+  display: grid;
+  align-items: center;
+  background: rgba(255,255,255,.88);
+  backdrop-filter: blur(24px);
+  box-shadow: 0 18px 42px rgba(16, 24, 48, 0.13);
+}
+
+.boarding-glass-card {
+  grid-template-columns: repeat(3, 1fr) 1.5fr;
+  gap: 14px;
+}
+
+.boarding-glass-card small,
+.trip-date-glass small {
+  color: #667085;
+  font-weight: 700;
+}
+
+.boarding-glass-card strong {
+  display: block;
+  margin-top: 5px;
+  font-size: 18px;
+}
+
+.boarding-glass-card button,
+.trip-date-glass button {
+  height: 48px;
+  border-radius: 17px;
+  color: #7657ff;
+  font-weight: 900;
+  background: #f1edff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+}
+
+.trip-date-glass {
+  margin-top: 0;
+  border-radius: 0 0 24px 24px;
+  grid-template-columns: 80px 1fr auto;
+}
+
+.trip-date-glass strong {
+  display: block;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.trip-date-glass h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.premium-readiness-card,
+.premium-quick-card,
+.premium-upcoming-card {
+  margin-top: 18px;
+  padding: 22px;
+  border-radius: 30px;
+  background: rgba(255,255,255,.92);
+  box-shadow: 0 24px 60px rgba(27, 35, 70, 0.12);
+}
+
+.readiness-top {
+  display: grid;
+  grid-template-columns: 118px 1fr 150px;
+  align-items: center;
+  gap: 18px;
+}
+
+.readiness-circle {
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  border: 10px solid #7657ff;
+  border-left-color: #eee9ff;
+}
+
+.readiness-circle strong {
+  font-size: 30px;
+}
+
+.readiness-circle span {
+  color: #667085;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.readiness-top h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.readiness-top em {
+  display: inline-block;
+  margin: 6px 0;
+  color: #16a34a;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.readiness-top p {
+  margin: 0 0 10px;
+  color: #344054;
+}
+
+.readiness-progress {
+  height: 7px;
+  border-radius: 999px;
+  background: #ece9f8;
+  overflow: hidden;
+}
+
+.readiness-progress i {
+  display: block;
+  width: 86%;
+  height: 100%;
+  background: #7657ff;
+}
+
+.improve-readiness-btn {
+  min-height: 72px;
+  border-radius: 22px;
+  color: #7657ff;
+  background: #f1edff;
+  font-weight: 900;
+}
+
+.readiness-grid.premium {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.premium-quick-card h2,
+.premium-upcoming-card h2 {
+  margin: 0 0 16px;
+  font-size: 22px;
+}
+
+.premium-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+}
+
+.premium-quick-grid button {
+  min-height: 104px;
+  border-radius: 22px;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  color: #7657ff;
+  box-shadow: 0 14px 28px rgba(27, 35, 70, 0.08);
+}
+
+.premium-quick-grid strong {
+  color: #071634;
+  font-size: 13px;
+}
+
+.premium-quick-grid span {
+  color: #667085;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.peso-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  color: white !important;
+  background: #16a34a;
+  font-weight: 900;
+}
+
+.premium-upcoming-card > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.premium-upcoming-card button {
+  background: transparent;
+  color: #7657ff;
+  font-weight: 900;
+}
+
+.premium-upcoming-card article {
+  display: grid;
+  grid-template-columns: 150px 1fr 24px;
+  gap: 16px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(27, 35, 70, 0.07);
+}
+
+.premium-upcoming-card img {
+  width: 150px;
+  height: 92px;
+  border-radius: 18px;
+  object-fit: cover;
+}
+
+.premium-upcoming-card h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.premium-upcoming-card p {
+  margin: 6px 0;
+  color: #667085;
+}
+
+.premium-upcoming-card span {
+  color: #7657ff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+@media (max-width: 520px) {
+  .premium-map {
+    height: 270px;
+  }
+
+  .boarding-glass-card {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .boarding-glass-card button {
+    grid-column: 1 / -1;
+  }
+
+  .readiness-top {
+    grid-template-columns: 1fr;
+  }
+
+  .improve-readiness-btn {
+    width: 100%;
+  }
+
+  .readiness-grid.premium,
+  .premium-quick-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .premium-upcoming-card article {
+    grid-template-columns: 1fr;
+  }
+
+  .premium-upcoming-card img {
+    width: 100%;
+  }
+}
