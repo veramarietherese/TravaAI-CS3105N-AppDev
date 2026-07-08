@@ -1,160 +1,95 @@
-import {
-  ArrowLeft,
-  MoreHorizontal,
-  Plane,
-  Hotel,
-  Utensils,
-  Bus,
-  Ticket,
-  Download,
-} from "lucide-react"
 import "./budget.css"
 
-const breakdown = [
-  {
-    icon: <Plane size={18} />,
-    label: "Flights",
-    spent: "₱18,000",
-    budget: "₱25,000",
-    percent: 72,
-    color: "purple",
-  },
-  {
-    icon: <Hotel size={18} />,
-    label: "Hotels",
-    spent: "₱8,400",
-    budget: "₱20,000",
-    percent: 42,
-    color: "blue",
-  },
-  {
-    icon: <Utensils size={18} />,
-    label: "Food",
-    spent: "₱3,500",
-    budget: "₱10,000",
-    percent: 35,
-    color: "pink",
-  },
-  {
-    icon: <Bus size={18} />,
-    label: "Transport",
-    spent: "₱1,800",
-    budget: "₱5,000",
-    percent: 36,
-    color: "orange",
-  },
-  {
-    icon: <Ticket size={18} />,
-    label: "Activities",
-    spent: "₱600",
-    budget: "₱5,000",
-    percent: 12,
-    color: "green",
-  },
-]
+const DEFAULT_ASSETS = {
+  // Replace these with your real asset paths later.
+  // Example: "/assets/budget/wallet-3d.png"
+  wallet: "/assets/budget/replace-wallet-asset.png",
 
-export default function BudgetScreen() {
+  // Example: "/assets/budget/money-3d.png"
+  money: "/assets/budget/replace-money-asset.png",
+
+  // Example: "/assets/budget/chart-3d.png"
+  chart: "/assets/budget/replace-chart-asset.png",
+}
+
+export default function BudgetScreen({
+  totalBudget = 80000,
+  spent = 32400,
+  tripDays = 8,
+  currencySymbol = "₱",
+  assets = DEFAULT_ASSETS,
+}) {
+  const remainingBalance = Math.max(totalBudget - spent, 0)
+  const dailyAverage = Math.round(totalBudget / tripDays)
+
   return (
-    <div className="scroll-area trip-budget-page">
-      <header className="trip-page-header">
-        <button type="button">
-          <ArrowLeft size={22} />
-        </button>
+    <section className="budget-screen">
+      <article className="budget-hero-card">
+        <div className="budget-orb budget-orb-pink" />
+        <div className="budget-orb budget-orb-blue" />
 
-        <h1>Japan Trip</h1>
+        <img
+          className="budget-wallet-asset"
+          src={assets.wallet}
+          alt="3D wallet"
+        />
 
-        <button type="button">
-          <MoreHorizontal size={22} />
-        </button>
-      </header>
+        <div className="budget-hero-copy">
+          <span>Overall Balance</span>
+          <h2>
+            {currencySymbol}
+            {totalBudget.toLocaleString()}
+          </h2>
+          <p>Total planned budget for this trip</p>
+        </div>
+      </article>
 
-      <nav className="trip-page-tabs">
-        <button>Overview</button>
-        <button>Itinerary</button>
-        <button className="active">Budget</button>
-        <button>Expenses</button>
-      </nav>
+      <div className="budget-card-grid">
+        <BudgetMiniCard
+          label="Remaining Balance"
+          value={`${currencySymbol}${remainingBalance.toLocaleString()}`}
+          caption="Still available to spend"
+          image={assets.money}
+          alt="3D money"
+        />
 
-      <section className="budget-overview-panel">
-        <div className="budget-panel-head">
-          <div>
-            <h2>Budget Overview</h2>
-          </div>
+        <BudgetMiniCard
+          label="Daily Average"
+          value={`${currencySymbol}${dailyAverage.toLocaleString()}`}
+          caption="Suggested spending per day"
+          image={assets.chart}
+          alt="3D chart"
+        />
+      </div>
 
-          <button type="button">
-            <Download size={16} />
-            Export
-          </button>
+      <section className="budget-clean-summary">
+        <div>
+          <span>Spent so far</span>
+          <strong>
+            {currencySymbol}
+            {spent.toLocaleString()}
+          </strong>
         </div>
 
-        <div className="budget-total-row">
-          <div>
-            <strong>₱80,000</strong>
-            <span>Total Budget</span>
-          </div>
-
-          <div>
-            <strong className="used">₱32,400</strong>
-            <span>Used (40%)</span>
-          </div>
-        </div>
-
-        <div className="budget-main-progress">
-          <i />
-        </div>
-      </section>
-
-      <section className="budget-mini-grid">
-        <article>
-          <strong>₱47,600</strong>
-          <span>Remaining</span>
-        </article>
-
-        <article>
-          <strong>40%</strong>
-          <span>Used</span>
-        </article>
-
-        <article>
-          <strong>₱10,000</strong>
-          <span>Daily Avg.</span>
-        </article>
-      </section>
-
-      <section className="budget-breakdown-panel">
-        <div className="budget-breakdown-head">
-          <h2>Budget Breakdown</h2>
-          <button type="button">Edit ›</button>
-        </div>
-
-        <div className="budget-category-list">
-          {breakdown.map((item) => (
-            <article className="budget-category" key={item.label}>
-              <div className={`budget-category-icon ${item.color}`}>
-                {item.icon}
-              </div>
-
-              <div className="budget-category-info">
-                <div className="budget-category-top">
-                  <strong>{item.label}</strong>
-                  <span>
-                    {item.spent} / {item.budget}
-                  </span>
-                </div>
-
-                <div className="budget-category-bar">
-                  <i
-                    className={item.color}
-                    style={{ width: `${item.percent}%` }}
-                  />
-                </div>
-              </div>
-
-              <em>{item.percent}%</em>
-            </article>
-          ))}
+        <div>
+          <span>Trip days</span>
+          <strong>{tripDays} days</strong>
         </div>
       </section>
-    </div>
+    </section>
+  )
+}
+
+function BudgetMiniCard({ label, value, caption, image, alt }) {
+  return (
+    <article className="budget-mini-card">
+      <img className="budget-mini-asset" src={image} alt={alt} />
+
+      <div>
+        <span>{label}</span>
+        <h3>{value}</h3>
+        <p>{caption}</p>
+      </div>
+    </article>
   )
 }
