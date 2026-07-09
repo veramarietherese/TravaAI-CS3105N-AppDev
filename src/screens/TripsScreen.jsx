@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   ArrowLeft,
   CalendarDays,
@@ -26,6 +26,7 @@ import {
 } from "lucide-react"
 
 import "./trips.css"
+import { getFlightSchedule } from "../lib/flightService"
 
 const tabs = ["Overview", "Itinerary", "Budget", "Expenses"]
 
@@ -72,12 +73,136 @@ export default function TripsScreen() {
 }
 
 function TripsLanding({ onOpenTrip }) {
+  const [flight, setFlight] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [usingFallback, setUsingFallback] = useState(false)
+  const [searchValue, setSearchValue] = useState("")
+  const [searching, setSearching] = useState(false)
+  const [searchError, setSearchError] = useState("")
+  const [savedMessage, setSavedMessage] = useState("")
+
+  useEffect(() => {
+    let mounted = true
+
+    async function load() {
+      const fallback = {
+        departureTime: "9:00 AM",
+        arrivalTime: "2:30 PM",
+        originCode: "CEB",
+        originName: "Cebu",
+        destCode: "NRT",
+        destName: "Tokyo (Narita)",
+        terminal: "Cebu Terminal 2",
+        gate: "Gate C6",
+      }
+
+      try {
+        const debugEnabled = import.meta.env.DEV && import.meta.env.VITE_AIRLABS_DEBUG === "true"
+        if (!debugEnabled) {
+          if (mounted) {
+            setFlight(fallback)
+            setUsingFallback(true)
+          }
+          return
+        }
+
+        const now = Math.floor(Date.now() / 1000)
+        const twelveHours = now + 60 * 60 * 12
+        const schedules = await getFlightSchedule("CEB", now, twelveHours)
+        const first = schedules && schedules.length ? schedules[0] : null
+
+        if (mounted) {
+          setFlight(first || fallback)
+          setUsingFallback(!first)
+        }
+      } catch (err) {
+        console.error("Flight schedule load failed", err)
+        if (mounted) {
+          setFlight(fallback)
+          setUsingFallback(true)
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false)
+        }
+      }
+    }
+
+    load()
+
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  async function searchFlight(event) {
+    event.preventDefault()
+    setSearchError("")
+    setSavedMessage("")
+
+    const flightNumber = searchValue.trim()
+    if (!flightNumber) {
+      setSearchError("Please enter a flight number to lookup.")
+      return
+    }
+
+    setSearching(true)
+
+    try {
+      const baseUrl = import.meta.env.VITE_AIRLABS_BASE_URL
+      const url = `${baseUrl.replace(/\/$/, "")}/api/flight?flightNumber=${encodeURIComponent(flightNumber)}`
+      const response = await fetch(url)
+      const payload = await response.json()
+      console.log("BASE URL: ", baseUrl)
+      console.log("URL: ", url)
+      console.log("Response: ", response)
+      console.log("Payload: ", payload)
+
+      if (!response.ok) {
+        setSearchError(payload.error || "Could not find that flight.")
+        return
+      }
+
+      const flightDetails = payload.flight
+      if (!flightDetails) {
+        setSearchError("Flight lookup returned no details.")
+        return
+      }
+
+      setFlight(flightDetails)
+      setUsingFallback(false)
+
+      const saveResponse = await fetch(`${baseUrl.replace(/\/$/, "")}/api/flights`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(flightDetails),
+      })
+      const savePayload = await saveResponse.json()
+
+      if (saveResponse.ok) {
+        setSavedMessage(`Saved flight ${savePayload.flight.flightNumber} to the backend.`)
+      } else {
+        console.warn("Failed to save flight", savePayload)
+      }
+    } catch (err) {
+      console.error("Flight search failed", err)
+      setSearchError("Flight lookup failed. Please try again.")
+    } finally {
+      setSearching(false)
+    }
+  }
+
   return (
     <div className="scroll-area trips-premium-home">
       <header className="trips-hero-header">
         <div>
           <p>Hey, Dhan! 👋</p>
           <h1>My Trips</h1>
+          <p className="flight-status-note">
+            {loading
+              ? "Loading flight details..."
+              : "Using demo schedule to preserve AirLabs usage"}
+          </p>
         </div>
 
         <div className="trips-avatar">
@@ -86,20 +211,38 @@ function TripsLanding({ onOpenTrip }) {
         </div>
       </header>
 
+      <section className="flight-search-panel">
+        <h2>Lookup by flight number</h2>
+        <form className="flight-search-form" onSubmit={searchFlight}>
+          <input
+            type="text"
+            value={searchValue}
+            onChange={(event) => setSearchValue(event.target.value)}
+            placeholder="e.g. PR 641 or 5J 5062"
+            aria-label="Flight number"
+          />
+          <button type="submit" disabled={searching || !searchValue.trim()}>
+            {searching ? "Searching…" : "Lookup flight"}
+          </button>
+        </form>
+        {searchError ? <p className="flight-search-error">{searchError}</p> : null}
+        {savedMessage ? <p className="flight-search-saved">{savedMessage}</p> : null}
+      </section>
+
       <section className="ios-flight-card" onClick={onOpenTrip}>
         <div className="flight-top">
           <div>
             <span>DEPARTURE</span>
-            <strong>9:00 AM</strong>
-            <h2>CEB</h2>
-            <p>Cebu</p>
+            <strong>{flight?.departureTime || "—"}</strong>
+            <h2>{flight?.originCode || "—"}</h2>
+            <p>{flight?.originName || "—"}</p>
           </div>
 
           <div>
             <span>ARRIVAL</span>
-            <strong>2:30 PM</strong>
-            <h2>NRT</h2>
-            <p>Tokyo (Narita)</p>
+            <strong>{flight?.arrivalTime || "—"}</strong>
+            <h2>{flight?.destCode || "—"}</h2>
+            <p>{flight?.destName || "—"}</p>
           </div>
         </div>
 
@@ -108,9 +251,9 @@ function TripsLanding({ onOpenTrip }) {
 
         <div className="flight-bottom">
           <span>
-            <MapPin size={18} /> Cebu Terminal 2
+            <MapPin size={18} /> {flight?.terminal || "—"}
           </span>
-          <span>🎟️ Gate C6</span>
+          <span>🎟️ {flight?.gate || "—"}</span>
         </div>
       </section>
 
