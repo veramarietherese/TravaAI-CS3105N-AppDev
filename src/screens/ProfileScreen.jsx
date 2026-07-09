@@ -9,12 +9,15 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
-import { supabase } from "../auth/supabaseClient"; // Import our shared client
+import { supabase } from "../auth/supabaseClient";
+import { useAuth } from "../auth/AuthContext";
 
 export default function ProfileScreen() {
+  const { user } = useAuth();
+  const displayName = user?.user_metadata?.full_name || user?.email || "traveler";
+
   const handleSignOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) setErrorMessage(error.message);
+    await supabase.auth.signOut();
   };
 
   return (
@@ -34,7 +37,7 @@ export default function ProfileScreen() {
 
         <div className="profile-avatar-xl">🧑🏻</div>
 
-        <h2>Dhan Alcover</h2>
+        <h2>{displayName}</h2>
         <p>Luxury traveler · Family trips · Japan lover</p>
 
         <div className="profile-badges">

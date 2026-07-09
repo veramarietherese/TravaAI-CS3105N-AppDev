@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import "./AIChatScreen.css";
+import { useAuth } from "../auth/AuthContext";
 
 export default function AIChatScreen({ onBack }) {
+  const { user } = useAuth();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const scrollRef = useRef(null);
@@ -45,7 +47,7 @@ export default function AIChatScreen({ onBack }) {
         </button>
         <div>
           <h1>AI Travel Concierge</h1>
-          <p>Find your perfect trip</p>
+          <p>Find your perfect trip for {user?.user_metadata?.full_name || user?.email || "you"}</p>
         </div>
       </header>
 

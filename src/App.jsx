@@ -21,7 +21,11 @@ import TravelGlobe from "./components/TravelGlobe";
 import ChatWidget from "./components/ChatWidget";
 import { supabase } from "./auth/supabaseClient"; // Import client
 import AuthScreen from "./auth/AuthScreen"; // Import clean Auth UI
+import { useAuth } from "./auth/AuthContext";
 import AgencyDashboardScreen from "./screens/AgencyDashboardScreen";
+import SmartMatchScreen from "./screens/SmartMatchScreen";
+import AIChatScreen from "./screens/AIChatScreen";
+import UserChatScreen from "./screens/UserChatScreen";
 
 import {
   discoverCategories,
@@ -163,6 +167,9 @@ export default function App() {
   const goToTrips = () => setCurrentScreen("trips");
   const goToProfile = () => setCurrentScreen("profile");
   const goToAgencyDashboard = () => setCurrentScreen("agency-dashboard");
+  const goToSmartMatch = () => setCurrentScreen("smartmatch");
+  const goToAIChat = () => setCurrentScreen("ai-chat");
+  const goToChat = () => setCurrentScreen("chat");
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -208,6 +215,12 @@ export default function App() {
           <TripsScreen />
         ) : currentScreen === "profile" ? (
           <ProfileScreen />
+        ) : currentScreen === "smartmatch" ? (
+          <SmartMatchScreen onStartChat={goToAIChat} />
+        ) : currentScreen === "ai-chat" ? (
+          <AIChatScreen onBack={goToSmartMatch} />
+        ) : currentScreen === "chat" ? (
+          <UserChatScreen onBack={goToHome} />
         ) : currentScreen === "agency-dashboard" || isAgency ? (
           <AgencyDashboardScreen onBack={goToHome} onLogout={handleLogout} />
         ) : (
@@ -221,8 +234,10 @@ export default function App() {
             currentScreen={currentScreen}
             onHome={goToHome}
             onExplore={goToExplore}
+            onSmartMatch={goToSmartMatch}
             onTrips={goToTrips}
             onProfile={goToProfile}
+            onChat={goToChat}
           />
         )}
       </section>
@@ -312,8 +327,9 @@ function HomeScreen({ onDiscover }) {
       },
     ]);
   }
-  const { user, loading } = useAuth();
-  console.log("user: ", user);
+  const { user } = useAuth();
+  const displayName = user?.user_metadata?.full_name || user?.email || "traveler";
+
   return (
     <div className="scroll-area home-screen travel-home-v2">
       <header className="home-v2-header">
@@ -321,7 +337,7 @@ function HomeScreen({ onDiscover }) {
           <div className="home-v2-avatar">🧑🏻</div>
 
           <div>
-            <p>Hey, {user.user_metadata.full_name}! 👋</p>
+            <p>Hey, {displayName}! 👋</p>
             <h1>Where to next?</h1>
           </div>
         </div>
