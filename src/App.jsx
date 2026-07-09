@@ -17,14 +17,11 @@ import BottomNav from "./components/BottomNav";
 import BudgetScreen from "./screens/BudgetScreen";
 import TripsScreen from "./screens/TripsScreen";
 import ProfileScreen from "./screens/ProfileScreen";
-import SmartMatchScreen from "./screens/SmartMatchScreen";
 import TravelGlobe from "./components/TravelGlobe";
-import AIChatScreen from "./screens/AIChatScreen";
 import ChatWidget from "./components/ChatWidget";
-import UserChatScreen from "./screens/UserChatScreen";
 import { supabase } from "./auth/supabaseClient"; // Import client
 import AuthScreen from "./auth/AuthScreen"; // Import clean Auth UI
-import { useAuth } from "./auth/AuthContext";
+import AgencyDashboardScreen from "./screens/AgencyDashboardScreen";
 
 import {
   discoverCategories,
@@ -164,10 +161,14 @@ export default function App() {
   const goToHome = () => setCurrentScreen("home");
   const goToExplore = () => setCurrentScreen("explore");
   const goToTrips = () => setCurrentScreen("trips");
-  const goToSmartMatch = () => setCurrentScreen("smartmatch");
   const goToProfile = () => setCurrentScreen("profile");
-  const goToAIChat = () => setCurrentScreen("aichat");
-  const goToUserChat = () => setCurrentScreen("chat");
+  const goToAgencyDashboard = () => setCurrentScreen("agency-dashboard");
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setSession(null);
+    setCurrentScreen("home");
+  };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -183,6 +184,10 @@ export default function App() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const userType = session?.user?.user_metadata?.user_type ?? "Traveler";
+  const isAgency = userType === "Agency";
+
   if (loading) return <div className="loading">Loading...</div>;
   // Protect the whole app loop
   if (!session) {
@@ -201,29 +206,23 @@ export default function App() {
           <DiscoverScreen onBack={goToHome} />
         ) : currentScreen === "trips" ? (
           <TripsScreen />
-        ) : currentScreen === "smartmatch" ? (
-          <SmartMatchScreen onStartChat={goToAIChat} />
         ) : currentScreen === "profile" ? (
           <ProfileScreen />
-        ) : currentScreen === "aichat" ? (
-          <AIChatScreen onBack={() => setCurrentScreen("smartmatch")} />
-        ) : currentScreen === "chat" ? ( // 👈 ADDED THIS TERNARY NODE
-          <UserChatScreen onBack={goToHome} />
+        ) : currentScreen === "agency-dashboard" || isAgency ? (
+          <AgencyDashboardScreen onBack={goToHome} onLogout={handleLogout} />
         ) : (
           <HomeScreen onDiscover={goToExplore} />
         )}
 
         <ChatWidget />
 
-        {currentScreen !== "aichat" && (
+        {currentScreen !== "agency-dashboard" && (
           <BottomNav
             currentScreen={currentScreen}
             onHome={goToHome}
             onExplore={goToExplore}
             onTrips={goToTrips}
-            onSmartMatch={goToSmartMatch}
             onProfile={goToProfile}
-            onChat={goToUserChat}
           />
         )}
       </section>
