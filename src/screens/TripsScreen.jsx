@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import {
   ArrowLeft,
   CalendarDays,
@@ -29,6 +29,61 @@ import "./trips.css"
 import { getFlightSchedule } from "../lib/flightService"
 
 const tabs = ["Overview", "Itinerary", "Budget", "Expenses"]
+
+// AirLabs' /schedules response only gives IATA codes, not city names.
+// Look city names up via AirLabs' Airports DB endpoint instead of hardcoding them.
+async function fetchAirportCity(baseUrl, apiKey, iataCode, signal) {
+  if (!iataCode) return "—"
+
+  try {
+    const params = new URLSearchParams({ iata_code: iataCode, api_key: apiKey })
+    const response = await fetch(`${baseUrl}/airports?${params.toString()}`, {
+      signal,
+      cache: "no-store",
+    })
+
+    if (!response.ok) return iataCode
+
+    const payload = await response.json()
+    const airports = Array.isArray(payload.response) ? payload.response : []
+    return airports[0]?.city || iataCode
+  } catch (err) {
+    if (err.name === "AbortError") throw err // let the caller handle cancellation
+    return iataCode // don't let a city-lookup failure break the whole search
+  }
+}
+
+// Converts AirLabs' "YYYY-MM-DD HH:mm" into "Mon, Jul 14".
+function formatFlightDate(rawTimestamp) {
+  if (!rawTimestamp) return "—"
+  const datePart = rawTimestamp.split(" ")[0]
+  if (!datePart) return "—"
+
+  const parsed = new Date(`${datePart}T00:00:00`)
+  if (Number.isNaN(parsed.getTime())) return "—"
+
+  return parsed.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  })
+}
+
+function formatFlightTime(rawTimestamp) {
+  if (!rawTimestamp) return "—"
+  const timePart = rawTimestamp.split(" ")[1]
+  if (!timePart) return "—"
+
+  const [hourStr, minuteStr] = timePart.split(":")
+  let hour = parseInt(hourStr, 10)
+  if (Number.isNaN(hour)) return "—"
+
+  const period = hour >= 12 ? "PM" : "AM"
+  hour = hour % 12
+  if (hour === 0) hour = 12
+
+  return `${hour}:${minuteStr} ${period}`
+}
 
 export default function TripsScreen() {
   const [selectedTrip, setSelectedTrip] = useState(null)
@@ -80,6 +135,7 @@ function TripsLanding({ onOpenTrip }) {
   const [searching, setSearching] = useState(false)
   const [searchError, setSearchError] = useState("")
   const [savedMessage, setSavedMessage] = useState("")
+  const searchAbortRef = useRef(null)
 
   useEffect(() => {
     let mounted = true
@@ -88,12 +144,12 @@ function TripsLanding({ onOpenTrip }) {
       const fallback = {
         departureTime: "9:00 AM",
         arrivalTime: "2:30 PM",
+        date: "Demo flight",
         originCode: "CEB",
         originName: "Cebu",
         destCode: "NRT",
         destName: "Tokyo (Narita)",
         terminal: "Cebu Terminal 2",
-        gate: "Gate C6",
       }
 
       try {
@@ -135,6 +191,10 @@ function TripsLanding({ onOpenTrip }) {
     }
   }, [])
 
+  // IATA airline codes are always exactly 2 alphanumeric chars (e.g. PR, 5J, 6E).
+  // Using {2} instead of {2,3} avoids ambiguous parsing on no-space input like "5J2515".
+  const FLIGHT_REGEX = /^([A-Za-z0-9]{2})\s*(\d{1,4})$/i
+
   async function searchFlight(event) {
     event.preventDefault()
     setSearchError("")
@@ -146,49 +206,97 @@ function TripsLanding({ onOpenTrip }) {
       return
     }
 
+    const flightMatch = flightNumber.match(FLIGHT_REGEX)
+    if (!flightMatch) {
+      setSearchError("Use a format like 'PR 641' or '5J 5062'.")
+      return
+    }
+
+    // Cancel any in-flight request before starting a new one
+    searchAbortRef.current?.abort()
+    const controller = new AbortController()
+    searchAbortRef.current = controller
+
     setSearching(true)
 
     try {
-      const baseUrl = import.meta.env.VITE_AIRLABS_BASE_URL
-      const url = `${baseUrl.replace(/\/$/, "")}/api/flight?flightNumber=${encodeURIComponent(flightNumber)}`
-      const response = await fetch(url)
-      const payload = await response.json()
-      console.log("BASE URL: ", baseUrl)
-      console.log("URL: ", url)
-      console.log("Response: ", response)
-      console.log("Payload: ", payload)
+      const baseUrl = import.meta.env.VITE_AIRLABS_BASE_URL.replace(/\/$/, "")
+      const apiKey = import.meta.env.VITE_AIRLABS_API_KEY
+      const params = new URLSearchParams({
+        flight_iata: `${flightMatch[1].toUpperCase()}${flightMatch[2]}`,
+        api_key: apiKey,
+      })
 
-      if (!response.ok) {
-        setSearchError(payload.error || "Could not find that flight.")
+      // baseUrl already includes /api/v9 — do not prefix another /api here.
+      // /schedules covers upcoming scheduled flights, not just airborne ones.
+      const response = await fetch(`${baseUrl}/schedules?${params.toString()}`, {
+        signal: controller.signal,
+        cache: "no-store",
+      })
+
+      let payload
+      try {
+        payload = await response.json()
+      } catch {
+        setSearchError("Unexpected response from the server.")
         return
       }
 
-      const flightDetails = payload.flight
-      if (!flightDetails) {
-        setSearchError("Flight lookup returned no details.")
+      if (!response.ok) {
+        setSearchError(payload.error?.message || "Could not find that flight.")
         return
+      }
+
+      // /schedules returns an array of matches (e.g. codeshares); take the first.
+      const matches = Array.isArray(payload.response) ? payload.response : []
+      const match = matches[0]
+      if (!match) {
+        setSearchError("No scheduled flight found for that number.")
+        return
+      }
+
+      const [originName, destName] = await Promise.all([
+        fetchAirportCity(baseUrl, apiKey, match.dep_iata, controller.signal),
+        fetchAirportCity(baseUrl, apiKey, match.arr_iata, controller.signal),
+      ])
+
+      const flightDetails = {
+        departureTime: formatFlightTime(match.dep_time),
+        arrivalTime: formatFlightTime(match.arr_time),
+        date: formatFlightDate(match.dep_time),
+        originCode: match.dep_iata,
+        originName,
+        destCode: match.arr_iata,
+        destName,
+        terminal: match.dep_terminal ? `Terminal ${match.dep_terminal}` : "—",
+        status: match.status,
       }
 
       setFlight(flightDetails)
       setUsingFallback(false)
 
-      const saveResponse = await fetch(`${baseUrl.replace(/\/$/, "")}/api/flights`, {
+      const saveResponse = await fetch(`${baseUrl}/api/flights`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(flightDetails),
+        signal: controller.signal,
       })
-      const savePayload = await saveResponse.json()
 
       if (saveResponse.ok) {
+        const savePayload = await saveResponse.json()
         setSavedMessage(`Saved flight ${savePayload.flight.flightNumber} to the backend.`)
       } else {
-        console.warn("Failed to save flight", savePayload)
+        console.warn("Failed to save flight")
       }
+      // Save failures don't block the user — lookup already succeeded.
     } catch (err) {
+      if (err.name === "AbortError") return // superseded by a newer request
       console.error("Flight search failed", err)
       setSearchError("Flight lookup failed. Please try again.")
     } finally {
-      setSearching(false)
+      if (searchAbortRef.current === controller) {
+        setSearching(false)
+      }
     }
   }
 
@@ -253,7 +361,9 @@ function TripsLanding({ onOpenTrip }) {
           <span>
             <MapPin size={18} /> {flight?.terminal || "—"}
           </span>
-          <span>🎟️ {flight?.gate || "—"}</span>
+          <span>
+            <CalendarDays size={18} /> {flight?.date || "—"}
+          </span>
         </div>
       </section>
 
