@@ -1,0 +1,296 @@
+/* =========================================================
+   TRAVA AI — BOTTOM NAVIGATION
+========================================================= */
+
+.bottom-nav {
+    position: fixed;
+    z-index: 9999;
+    left: 50%;
+    bottom: max(14px, env(safe-area-inset-bottom));
+  
+    width: min(92%, 560px);
+    min-height: 74px;
+  
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: center;
+  
+    padding: 7px 12px;
+  
+    border: 1px solid rgba(255, 255, 255, 0.92);
+    border-radius: 28px;
+  
+    background: rgba(255, 255, 255, 0.84);
+  
+    box-shadow:
+      0 18px 50px rgba(63, 65, 117, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+  
+    transform: translateX(-50%);
+  }
+  
+  /* Reset old global button styles */
+  
+  .bottom-nav .bottom-nav-item {
+    position: relative;
+  
+    min-width: 0;
+    min-height: 58px;
+  
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  
+    margin: 0;
+    padding: 5px 3px;
+  
+    border: 0;
+    border-radius: 18px;
+  
+    color: #7d879c;
+    background: transparent;
+  
+    font: inherit;
+    cursor: pointer;
+  
+    transition:
+      color 160ms ease,
+      background 160ms ease,
+      transform 160ms ease;
+  }
+  
+  .bottom-nav .bottom-nav-item:hover {
+    color: #6e54e7;
+    background: rgba(116, 87, 235, 0.07);
+  }
+  
+  /* Important: keep icon wrapper visible */
+  
+  .bottom-nav .bottom-nav-icon {
+    position: relative;
+    z-index: 3;
+  
+    width: 29px;
+    height: 29px;
+  
+    display: grid !important;
+    place-items: center;
+  
+    color: inherit;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+  
+  .bottom-nav .bottom-nav-icon svg {
+    position: relative;
+    z-index: 4;
+  
+    display: block !important;
+  
+    width: 22px;
+    height: 22px;
+  
+    color: currentColor;
+    stroke: currentColor;
+  
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+  
+  /* Labels */
+  
+  .bottom-nav .bottom-nav-label {
+    display: block !important;
+  
+    max-width: 100%;
+  
+    color: inherit;
+  
+    font-size: 0.62rem;
+    font-weight: 750;
+    line-height: 1;
+  
+    opacity: 1 !important;
+    visibility: visible !important;
+  
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  /* Active normal navigation item */
+  
+  .bottom-nav .bottom-nav-item.active:not(.ai-nav) {
+    color: #7458ed;
+    background: linear-gradient(
+      180deg,
+      rgba(118, 88, 237, 0.12),
+      rgba(118, 88, 237, 0.04)
+    );
+  }
+  
+  .bottom-nav .bottom-nav-item.active:not(.ai-nav)
+    .bottom-nav-label {
+    font-weight: 900;
+  }
+  
+  /* =========================================================
+     CENTER AI BUTTON
+  ========================================================= */
+  
+  .bottom-nav .bottom-nav-item.ai-nav {
+    overflow: visible;
+    color: #ffffff;
+    background: transparent;
+  }
+  
+  .bottom-nav .bottom-nav-item.ai-nav:hover {
+    background: transparent;
+    transform: translateY(-2px);
+  }
+  
+  .bottom-nav .bottom-nav-item.ai-nav .bottom-nav-icon {
+    position: absolute;
+    z-index: 5;
+  
+    top: -28px;
+    left: 50%;
+  
+    width: 58px;
+    height: 58px;
+  
+    border: 5px solid rgba(255, 255, 255, 0.94);
+    border-radius: 50%;
+  
+    color: #ffffff;
+  
+    background:
+      radial-gradient(
+        circle at 35% 25%,
+        rgba(255, 255, 255, 0.44),
+        transparent 28%
+      ),
+      linear-gradient(
+        145deg,
+        #6984ff 0%,
+        #7552eb 48%,
+        #e45db1 100%
+      );
+  
+    box-shadow:
+      0 13px 30px rgba(102, 73, 223, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  
+    transform: translateX(-50%);
+  }
+  
+  .bottom-nav .bottom-nav-item.ai-nav .bottom-nav-icon svg {
+    width: 25px;
+    height: 25px;
+  
+    color: #ffffff !important;
+    stroke: #ffffff !important;
+  }
+  
+  .bottom-nav .bottom-nav-item.ai-nav .bottom-nav-label {
+    position: relative;
+    z-index: 3;
+  
+    margin-top: 29px;
+  
+    color: #7458ed;
+  
+    font-weight: 900;
+  }
+  
+  .bottom-nav .bottom-nav-item.ai-nav.active
+    .bottom-nav-icon {
+    box-shadow:
+      0 15px 35px rgba(102, 73, 223, 0.52),
+      0 0 0 7px rgba(117, 83, 235, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  }
+  
+  /* =========================================================
+     UNREAD MESSAGE BADGE
+  ========================================================= */
+  
+  .bottom-nav .bottom-nav-badge {
+    position: absolute;
+    z-index: 10;
+  
+    top: -6px;
+    right: -8px;
+  
+    min-width: 17px;
+    height: 17px;
+  
+    display: grid !important;
+    place-items: center;
+  
+    padding: 0 4px;
+  
+    border: 2px solid #ffffff;
+    border-radius: 999px;
+  
+    color: #ffffff;
+    background: #ff477d;
+  
+    font-size: 0.5rem;
+    font-weight: 900;
+    line-height: 1;
+  
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+  
+  /* Prevent page content from hiding behind navigation */
+  
+  .app-shell,
+  .phone {
+    padding-bottom: 105px;
+  }
+  
+  /* =========================================================
+     MOBILE
+  ========================================================= */
+  
+  @media (max-width: 600px) {
+    .bottom-nav {
+      bottom: max(9px, env(safe-area-inset-bottom));
+  
+      width: calc(100% - 20px);
+      min-height: 68px;
+  
+      padding: 6px 7px;
+  
+      border-radius: 24px;
+    }
+  
+    .bottom-nav .bottom-nav-item {
+      min-height: 54px;
+      gap: 3px;
+    }
+  
+    .bottom-nav .bottom-nav-label {
+      font-size: 0.56rem;
+    }
+  
+    .bottom-nav .bottom-nav-item.ai-nav
+      .bottom-nav-icon {
+      top: -25px;
+  
+      width: 54px;
+      height: 54px;
+    }
+  
+    .bottom-nav .bottom-nav-item.ai-nav
+      .bottom-nav-label {
+      margin-top: 27px;
+    }
+  }
