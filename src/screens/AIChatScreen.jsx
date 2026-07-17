@@ -1,387 +1,633 @@
-import { useEffect, useRef, useState } from "react";
 import {
-  ArrowLeft,
-  CalendarDays,
-  Clock3,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  Bot,
+  CircleStop,
+  Mic,
+  MoreHorizontal,
   Send,
-  Settings2,
   Sparkles,
-  Users,
-  Wallet,
-  Gem,
-  Mountain,
-  Briefcase,
+  Trash2,
+  X,
 } from "lucide-react";
+
+import { useAuth } from "../auth/AuthContext";
 import "./AIChatScreen.css";
 
-const destinations = [
+const STORAGE_PREFIX = "trava-ai-conversation";
+
+const DEFAULT_CARDS = [
   {
-    label: "Japan",
+    id: "paris",
+    title: "Paris, France",
+    subtitle: "5 days • Romantic",
+    priceLabel: "Plan from ₱58k",
+    tag: "Best for romance",
     image:
-      "https://images.unsplash.com/photo-1492571350019-22de08371fd3?q=80&w=400&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=85&w=900&auto=format&fit=crop",
   },
   {
-    label: "Korea",
+    id: "prague",
+    title: "Prague, Czechia",
+    subtitle: "5 days • Culture",
+    priceLabel: "Plan from ₱49k",
+    tag: "Most popular",
     image:
-      "https://images.unsplash.com/photo-1538485399081-7191377e8241?q=80&w=400&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1541849546-216549ae216d?q=85&w=900&auto=format&fit=crop",
   },
   {
-    label: "Europe",
+    id: "amalfi",
+    title: "Amalfi Coast",
+    subtitle: "5 days • Coastal",
+    priceLabel: "Plan from ₱67k",
+    tag: "Coastal view",
     image:
-      "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=400&auto=format&fit=crop",
-  },
-  {
-    label: "Other",
-    image:
-      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=400&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1533104816931-20fa691ff6ca?q=85&w=900&auto=format&fit=crop",
   },
 ];
 
-export default function AIChatScreen({ onBack }) {
-  const [messages, setMessages] = useState([
-    {
-      role: "assistant",
-      type: "intro",
-      text: "Hi there! 👋\nI’m TravaAI, your travel assistant.\nLet’s plan something amazing!",
-    },
-  ]);
+const DEFAULT_QUICK_PROMPTS = [
+  "Plan a solo trip to Japan",
+  "Best beaches in Asia",
+  "Budget trip to Switzerland",
+  "Visa requirements for Bali",
+];
 
-  const [destination, setDestination] = useState("Japan");
-  const [days, setDays] = useState("6 – 8 days");
-  const [travelers, setTravelers] = useState("3 – 4");
-  const [style, setStyle] = useState("Budget");
-  const [input, setInput] = useState("");
-  const [preferencesOpen, setPreferencesOpen] = useState(true);
-
-  const scrollRef = useRef(null);
-
-  useEffect(() => {
-    scrollRef.current?.scrollTo({
-      top: scrollRef.current.scrollHeight,
-      behavior: "smooth",
-    });
-  }, [messages, preferencesOpen]);
-
-  function chooseDestination(value) {
-    setDestination(value);
-
-    setMessages((prev) => [
-      ...prev,
-      { role: "user", text: value },
-      {
-        role: "assistant",
-        text: "Great choice! ✨\nI’ll need a few more details to find the perfect trip for you.",
-      },
-    ]);
+function createId(prefix = "message") {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
+    return crypto.randomUUID();
   }
 
-  async function handleSend(customMessage) {
-    const messageToSend = customMessage || input;
-    if (!messageToSend.trim()) return;
-  
-    setMessages((prev) => [
-      ...prev,
-      { role: "user", text: messageToSend },
-    ]);
-  
+  return `${prefix}-${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2, 9)}`;
+}
+
+function getUserName(user) {
+  return (
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.name ||
+    user?.email?.split("@")[0] ||
+    "Explorer"
+  );
+}
+
+function formatTime(date = new Date()) {
+  return new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function getStorageKey(user) {
+  return `${STORAGE_PREFIX}:${user?.id || "guest"}`;
+}
+
+function loadConversation(user) {
+  try {
+    const stored = window.localStorage.getItem(
+      getStorageKey(user),
+    );
+
+    const parsed = stored ? JSON.parse(stored) : [];
+
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveConversation(user, messages) {
+  try {
+    window.localStorage.setItem(
+      getStorageKey(user),
+      JSON.stringify(messages.slice(-40)),
+    );
+  } catch {
+    // The chat remains usable even without local storage.
+  }
+}
+
+function BotAvatar() {
+  return (
+    <div className="trava-ai-bot-avatar" aria-hidden="true">
+      <Bot size={19} />
+      <i />
+    </div>
+  );
+}
+
+function MessageText({ text }) {
+  const paragraphs = String(text || "")
+    .split(/\n{2,}/)
+    .filter(Boolean);
+
+  return (
+    <>
+      {paragraphs.map((paragraph, index) => (
+        <p key={`${paragraph.slice(0, 20)}-${index}`}>
+          {paragraph.split("\n").map((line, lineIndex) => (
+            <span key={`${line.slice(0, 20)}-${lineIndex}`}>
+              {line}
+              {lineIndex < paragraph.split("\n").length - 1 && (
+                <br />
+              )}
+            </span>
+          ))}
+        </p>
+      ))}
+    </>
+  );
+}
+
+function DestinationCards({ cards, onSelect }) {
+  if (!cards?.length) return null;
+
+  return (
+    <div className="trava-ai-card-track">
+      {cards.slice(0, 4).map((card) => (
+        <button
+          type="button"
+          className="trava-ai-destination-card"
+          key={card.id || card.title}
+          onClick={() => onSelect(card)}
+        >
+          <div className="trava-ai-destination-image">
+            <img src={card.image} alt={card.title} />
+            {card.tag && <span>{card.tag}</span>}
+          </div>
+
+          <div className="trava-ai-destination-copy">
+            <strong>{card.title}</strong>
+            <span>{card.subtitle}</span>
+            <small>{card.priceLabel}</small>
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export default function AIChatScreen({
+  onBack,
+  tripContext = null,
+}) {
+  const { user } = useAuth();
+  const userName = useMemo(() => getUserName(user), [user]);
+
+  const [messages, setMessages] = useState(() =>
+    loadConversation(user),
+  );
+  const [input, setInput] = useState("");
+  const [quickPrompts, setQuickPrompts] = useState(
+    DEFAULT_QUICK_PROMPTS,
+  );
+  const [recommendationCards, setRecommendationCards] =
+    useState(DEFAULT_CARDS);
+  const [loading, setLoading] = useState(false);
+  const [listening, setListening] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [notice, setNotice] = useState("");
+
+  const endRef = useRef(null);
+  const inputRef = useRef(null);
+  const abortRef = useRef(null);
+  const recognitionRef = useRef(null);
+
+  const welcomeMessage = useMemo(
+    () => ({
+      id: "welcome",
+      role: "assistant",
+      text: `Hello, ${userName}! 👋\nWhere shall we wander today?`,
+      createdAt: new Date().toISOString(),
+    }),
+    [userName],
+  );
+
+  useEffect(() => {
+    setMessages(loadConversation(user));
+  }, [user?.id]);
+
+  useEffect(() => {
+    saveConversation(user, messages);
+  }, [messages, user]);
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    });
+  }, [messages, loading, recommendationCards]);
+
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+      recognitionRef.current?.stop?.();
+    };
+  }, []);
+
+  const visibleMessages = messages.length
+    ? messages
+    : [welcomeMessage];
+
+  function clearConversation() {
+    abortRef.current?.abort();
+    setMessages([]);
+    setRecommendationCards(DEFAULT_CARDS);
+    setQuickPrompts(DEFAULT_QUICK_PROMPTS);
     setInput("");
-  
+    setNotice("");
+    setMenuOpen(false);
+
     try {
-      const res = await fetch("http://localhost:3001/api/chat", {
+      window.localStorage.removeItem(getStorageKey(user));
+    } catch {
+      // Nothing else is required.
+    }
+  }
+
+  function stopGeneration() {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setLoading(false);
+    setNotice("Generation stopped.");
+  }
+
+  function handleDestinationCard(card) {
+    const question = `Create a practical ${card.subtitle.toLowerCase()} plan for ${card.title}. Include a realistic Philippine-peso budget and the best areas to stay.`;
+    setInput(question);
+    inputRef.current?.focus();
+  }
+
+  async function sendMessage(rawMessage = input) {
+    const messageText = String(rawMessage || "").trim();
+
+    if (!messageText || loading) return;
+
+    const userMessage = {
+      id: createId("user"),
+      role: "user",
+      text: messageText,
+      createdAt: new Date().toISOString(),
+    };
+
+    const nextMessages = [...messages, userMessage];
+
+    setMessages(nextMessages);
+    setInput("");
+    setNotice("");
+    setMenuOpen(false);
+    setLoading(true);
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    const timeout = window.setTimeout(() => {
+      controller.abort();
+    }, 35000);
+
+    try {
+      const history = nextMessages
+        .slice(-8)
+        .map(({ role, text }) => ({
+          role,
+          text: String(text).slice(0, 1200),
+        }));
+
+      const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        signal: controller.signal,
         body: JSON.stringify({
-          message: messageToSend,
-          preferences: {
-            destination,
-            days,
-            travelers,
-            style,
+          message: messageText,
+          history,
+          user: {
+            id: user?.id || null,
+            name: userName,
           },
-          history: messages.slice(-8),
+          tripContext,
+          locale: "en-PH",
+          currency: "PHP",
         }),
       });
-  
-      const data = await res.json();
-  
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          text: data.text,
-        },
+
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(
+          payload?.error ||
+            "TRAVA AI could not answer right now.",
+        );
+      }
+
+      const assistantMessage = {
+        id: createId("assistant"),
+        role: "assistant",
+        text:
+          payload?.reply ||
+          "I’m ready to help with your trip. What destination are you considering?",
+        createdAt: new Date().toISOString(),
+        source: payload?.source || "gemini",
+      };
+
+      setMessages((current) => [
+        ...current,
+        assistantMessage,
       ]);
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          text: "Sorry, something went wrong. Please try again.",
-        },
-      ]);
+
+      if (Array.isArray(payload?.cards)) {
+        setRecommendationCards(payload.cards);
+      }
+
+      if (Array.isArray(payload?.quickReplies)) {
+        setQuickPrompts(payload.quickReplies.slice(0, 4));
+      }
+
+      if (payload?.source === "fallback") {
+        setNotice(
+          "Gemini is temporarily busy, so TRAVA used a lightweight travel fallback.",
+        );
+      }
+    } catch (error) {
+      if (error?.name === "AbortError") {
+        setNotice(
+          "The request took too long or was stopped. Please send it again.",
+        );
+      } else {
+        setMessages((current) => [
+          ...current,
+          {
+            id: createId("assistant-error"),
+            role: "assistant",
+            text:
+              "I couldn’t reach the travel assistant just now. Please try again in a moment.",
+            createdAt: new Date().toISOString(),
+            error: true,
+          },
+        ]);
+
+        setNotice(error?.message || "Something went wrong.");
+      }
+    } finally {
+      window.clearTimeout(timeout);
+      abortRef.current = null;
+      setLoading(false);
     }
   }
 
-  function findPerfectTrip() {
-    setPreferencesOpen(false);
-  
-    handleSend(
-      `Plan my trip to ${destination}.
-      Duration: ${days}.
-      Travelers: ${travelers}.
-      Travel style: ${style}.`
-    );
+  function handleSubmit(event) {
+    event.preventDefault();
+    sendMessage();
+  }
+
+  function startVoiceInput() {
+    const SpeechRecognition =
+      window.SpeechRecognition ||
+      window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      setNotice(
+        "Voice input is not supported by this browser.",
+      );
+      return;
+    }
+
+    if (listening) {
+      recognitionRef.current?.stop?.();
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-PH";
+    recognition.interimResults = true;
+    recognition.continuous = false;
+
+    recognition.onstart = () => {
+      setListening(true);
+      setNotice("Listening…");
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = Array.from(event.results)
+        .map((result) => result[0]?.transcript || "")
+        .join("");
+
+      setInput(transcript);
+    };
+
+    recognition.onerror = () => {
+      setNotice("Voice input could not start.");
+      setListening(false);
+    };
+
+    recognition.onend = () => {
+      setListening(false);
+      setNotice("");
+      inputRef.current?.focus();
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
   }
 
   return (
-    <div className="ai-concierge-screen">
-      <header className="ai-concierge-header">
-        <button onClick={onBack} className="ai-header-btn" type="button">
-          <ArrowLeft size={24} />
-        </button>
-
-        <div className="ai-brand-orb">
-          <Sparkles size={25} />
-        </div>
-
-        <div className="ai-header-title">
-          <h1>AI Travel Concierge</h1>
-          <p>Find your perfect trip</p>
-        </div>
-
-        <button className="ai-header-btn ai-clock" type="button">
-          <Clock3 size={24} />
-        </button>
-      </header>
-
-      <main className="ai-chat-scroll" ref={scrollRef}>
-        {messages.map((message, index) => (
-          <ChatMessage key={`${message.role}-${index}`} message={message} />
-        ))}
-
-        <div className="ai-row">
-          <div className="mini-ai-avatar">
-            <Sparkles size={18} />
-            <span />
+    <section className="trava-ai-screen">
+      <header className="trava-ai-header">
+        <div className="trava-ai-brand">
+          <div className="trava-ai-brand-icon">
+            <Sparkles size={23} />
           </div>
 
-          <section className="destination-card">
-            <h2>
-              <strong>Where</strong> do you want to go?
-            </h2>
-
-            <div className="destination-options">
-              {destinations.map((item) => (
-                <button
-                  type="button"
-                  key={item.label}
-                  className={
-                    destination === item.label
-                      ? "destination-option active"
-                      : "destination-option"
-                  }
-                  onClick={() => chooseDestination(item.label)}
-                >
-                  <img src={item.image} alt={item.label} />
-                  <span>{item.label}</span>
-                </button>
-              ))}
-            </div>
-          </section>
+          <div>
+            <h1>TRAVA AI</h1>
+            <p>Your smart travel companion</p>
+          </div>
         </div>
 
-        <section className="preferences-shell">
+        <div className="trava-ai-header-actions">
+          {onBack && (
+            <button
+              type="button"
+              className="trava-ai-header-secondary"
+              onClick={onBack}
+              aria-label="Close AI assistant"
+            >
+              <X size={19} />
+            </button>
+          )}
+
           <button
-            className="preferences-top"
             type="button"
-            onClick={() => setPreferencesOpen((current) => !current)}
+            className="trava-ai-menu-button"
+            onClick={() => setMenuOpen((current) => !current)}
+            aria-label="AI chat menu"
           >
-            <span className="preferences-icon">
-              <Sparkles size={18} />
-            </span>
-
-            <span>
-              <strong>Set your trip preferences</strong>
-              <small>Tap to customize your trip details</small>
-            </span>
-
-            <span className="preferences-toggle">
-              <Settings2 size={23} />
-            </span>
-
-            <span className={preferencesOpen ? "chevron up" : "chevron"} />
+            <MoreHorizontal size={21} />
           </button>
 
-          {preferencesOpen && (
-            <div className="preferences-panel">
-              <PreferenceGroup
-                icon={<CalendarDays size={24} />}
-                title="Trip duration"
-                subtitle="How many days are you planning?"
-                options={["3 – 5 days", "6 – 8 days", "9 – 12 days", "13+ days"]}
-                value={days}
-                onChange={setDays}
-              />
-
-              <PreferenceGroup
-                icon={<Users size={24} />}
-                title="Number of travelers"
-                subtitle="Who's coming with you?"
-                options={["1", "2", "3 – 4", "5+"]}
-                value={travelers}
-                onChange={setTravelers}
-              />
-
-              <PreferenceGroup
-                icon={<Briefcase size={24} />}
-                title="Travel style"
-                subtitle="What kind of experience are you looking for?"
-                options={["Budget", "Luxury", "Backpacker", "Family"]}
-                value={style}
-                onChange={setStyle}
-                icons={{
-                  Budget: <Wallet size={16} />,
-                  Luxury: <Gem size={16} />,
-                  Backpacker: <Mountain size={16} />,
-                  Family: <Users size={16} />,
-                }}
-              />
-
-              <button
-                className="find-trip-button"
-                type="button"
-                onClick={findPerfectTrip}
-              >
-                <Sparkles size={18} />
-                Find My Perfect Trip
+          {menuOpen && (
+            <div className="trava-ai-menu">
+              <button type="button" onClick={clearConversation}>
+                <Trash2 size={16} />
+                Clear conversation
               </button>
             </div>
           )}
-        </section>
-      </main>
-
-      <footer className="ai-input-dock">
-        <button className="input-sparkle" type="button">
-          <Sparkles size={23} />
-        </button>
-
-        <input
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          onKeyDown={(event) => event.key === "Enter" && handleSend()}
-          placeholder="Ask me anything about your trip..."
-        />
-
-        <button className="send-button" type="button" onClick={handleSend}>
-          <Send size={23} />
-        </button>
-      </footer>
-    </div>
-  );
-}
-
-function ChatMessage({ message }) {
-
-  if (message.role === "user") {
-    return (
-      <div className="user-message">
-        <span>{message.text}</span>
-        <small>9:41 AM</small>
-        <b>✓✓</b>
-      </div>
-    );
-  }
-
-  if (message.type === "match") {
-    return (
-      <div className="ai-row">
-        <div className="mini-ai-avatar">
-          <Sparkles size={18} />
-          <span />
         </div>
+      </header>
 
-        <section className="match-result-card">
-          <p>Great! Here's a premium match for you 👇</p>
+      <div className="trava-ai-conversation">
+        <div className="trava-ai-chat-column">
+          {visibleMessages.map((message) => {
+            const isAssistant = message.role === "assistant";
 
-          <div className="match-result-body">
-            <img
-              src="https://images.unsplash.com/photo-1492571350019-22de08371fd3?q=80&w=500&auto=format&fit=crop"
-              alt="Japan Spring Escape"
-            />
+            return (
+              <article
+                className={`trava-ai-message-row ${
+                  isAssistant ? "assistant" : "user"
+                }`}
+                key={message.id}
+              >
+                {isAssistant && <BotAvatar />}
 
-            <div>
-              <h2>Japan Spring Escape</h2>
-              <strong>96% Match</strong>
+                <div className="trava-ai-message-group">
+                  <div
+                    className={`trava-ai-message-bubble ${
+                      message.error ? "error" : ""
+                    }`}
+                  >
+                    <MessageText text={message.text} />
+                  </div>
 
-              <div className="result-tags">
-                <span>🌸 Cherry Blossom</span>
-                <span>👨‍👩‍👧 Family Friendly</span>
-                <span>💰 Within Budget</span>
+                  <time>
+                    {formatTime(
+                      new Date(message.createdAt || Date.now()),
+                    )}
+                  </time>
+                </div>
+              </article>
+            );
+          })}
+
+          {loading && (
+            <article className="trava-ai-message-row assistant">
+              <BotAvatar />
+
+              <div className="trava-ai-message-group">
+                <div className="trava-ai-message-bubble trava-ai-thinking">
+                  <span />
+                  <span />
+                  <span />
+                </div>
               </div>
+            </article>
+          )}
 
-              <div className="result-meta">
-                <span>📅 8 Days</span>
-                <span>👥 3 – 4 Travelers</span>
-                <span>🪙 ₱78,000</span>
-              </div>
+          <DestinationCards
+            cards={recommendationCards}
+            onSelect={handleDestinationCard}
+          />
+
+          <div className="trava-ai-prompt-section">
+            <strong>You can also try asking:</strong>
+
+            <div className="trava-ai-prompt-grid">
+              {quickPrompts.map((prompt) => (
+                <button
+                  type="button"
+                  key={prompt}
+                  onClick={() => sendMessage(prompt)}
+                  disabled={loading}
+                >
+                  {prompt}
+                </button>
+              ))}
             </div>
           </div>
 
-          <small>9:41 AM</small>
-        </section>
-      </div>
-    );
-  }
-
-  return (
-    <div className="ai-row">
-      <div className="mini-ai-avatar">
-        <Sparkles size={18} />
-        <span />
-      </div>
-
-      <div className="assistant-message">
-        {message.text.split("\n").map((line) => (
-          <p key={line}>{line}</p>
-        ))}
-        <small>9:41 AM</small>
-      </div>
-    </div>
-  );
-}
-
-function PreferenceGroup({
-  icon,
-  title,
-  subtitle,
-  options,
-  value,
-  onChange,
-  icons = {},
-}) {
-  return (
-    <section className="preference-group">
-      <div className="preference-icon">{icon}</div>
-
-      <div className="preference-content">
-        <h3>{title}</h3>
-        <p>{subtitle}</p>
-
-        <div className="preference-options">
-          {options.map((option) => (
-            <button
-              key={option}
-              type="button"
-              className={value === option ? "active" : ""}
-              onClick={() => onChange(option)}
-            >
-              {icons[option]}
-              {option}
-            </button>
-          ))}
+          <div ref={endRef} />
         </div>
+      </div>
+
+      <div className="trava-ai-composer-area">
+        {notice && (
+          <div className="trava-ai-notice">
+            {notice}
+          </div>
+        )}
+
+        <form
+          className="trava-ai-composer"
+          onSubmit={handleSubmit}
+        >
+          <button
+            type="button"
+            className={`trava-ai-mic-button ${
+              listening ? "active" : ""
+            }`}
+            onClick={startVoiceInput}
+            aria-label={
+              listening
+                ? "Stop voice input"
+                : "Start voice input"
+            }
+          >
+            {listening ? (
+              <CircleStop size={19} />
+            ) : (
+              <Mic size={19} />
+            )}
+          </button>
+
+          <textarea
+            ref={inputRef}
+            rows={1}
+            value={input}
+            maxLength={1500}
+            placeholder="Ask me anything about travel..."
+            onChange={(event) => setInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (
+                event.key === "Enter" &&
+                !event.shiftKey
+              ) {
+                event.preventDefault();
+                sendMessage();
+              }
+            }}
+          />
+
+          <button
+            type={loading ? "button" : "submit"}
+            className="trava-ai-send-button"
+            onClick={loading ? stopGeneration : undefined}
+            disabled={!loading && !input.trim()}
+            aria-label={
+              loading ? "Stop generating" : "Send message"
+            }
+          >
+            {loading ? (
+              <CircleStop size={20} />
+            ) : (
+              <Send size={20} />
+            )}
+          </button>
+        </form>
+
+        <p className="trava-ai-disclaimer">
+          AI suggestions may be inaccurate. Confirm prices,
+          availability, visas, and bookings with official sources
+          or the travel agency.
+        </p>
       </div>
     </section>
   );
