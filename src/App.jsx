@@ -9,6 +9,7 @@ import TripsScreen from "./screens/TripsScreen";
 import ProfileScreen from "./screens/ProfileScreen";
 import AIChatScreen from "./screens/AIChatScreen";
 import UserChatScreen from "./screens/UserChatScreen";
+import { useAuth } from "./auth/AuthContext";
 
 import "./index.css";
 
@@ -16,9 +17,7 @@ const PENDING_INQUIRY_KEY = "travaPendingInquiry";
 
 function readPendingInquiry() {
   try {
-    const stored = window.sessionStorage.getItem(
-      PENDING_INQUIRY_KEY,
-    );
+    const stored = window.sessionStorage.getItem(PENDING_INQUIRY_KEY);
 
     return stored ? JSON.parse(stored) : null;
   } catch {
@@ -29,31 +28,23 @@ function readPendingInquiry() {
 function savePendingInquiry(inquiry) {
   try {
     if (!inquiry) {
-      window.sessionStorage.removeItem(
-        PENDING_INQUIRY_KEY,
-      );
+      window.sessionStorage.removeItem(PENDING_INQUIRY_KEY);
       return;
     }
 
-    window.sessionStorage.setItem(
-      PENDING_INQUIRY_KEY,
-      JSON.stringify(inquiry),
-    );
+    window.sessionStorage.setItem(PENDING_INQUIRY_KEY, JSON.stringify(inquiry));
   } catch {
     // React state still carries the inquiry.
   }
 }
 
 export default function App() {
-  const [currentScreen, setCurrentScreen] =
-    useState("explore");
+  const [currentScreen, setCurrentScreen] = useState("explore");
 
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const [chatInquiry, setChatInquiry] = useState(
-    readPendingInquiry,
-  );
+  const [chatInquiry, setChatInquiry] = useState(readPendingInquiry);
 
   function goToExplore() {
     setCurrentScreen("explore");
@@ -74,8 +65,7 @@ export default function App() {
   }
 
   function goToMessages() {
-    const pendingInquiry =
-      chatInquiry || readPendingInquiry();
+    const pendingInquiry = chatInquiry || readPendingInquiry();
 
     if (pendingInquiry && !chatInquiry) {
       setChatInquiry(pendingInquiry);
@@ -94,9 +84,7 @@ export default function App() {
       ...inquiry,
       navigationId:
         inquiry.navigationId ||
-        `${Date.now()}-${Math.random()
-          .toString(36)
-          .slice(2, 9)}`,
+        `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
     };
 
     savePendingInquiry(normalizedInquiry);
@@ -112,32 +100,25 @@ export default function App() {
   useEffect(() => {
     let active = true;
 
-    supabase.auth
-      .getSession()
-      .then(({ data, error }) => {
-        if (!active) return;
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (!active) return;
 
-        if (error) {
-          console.error(
-            "Session load error:",
-            error,
-          );
-        }
+      if (error) {
+        console.error("Session load error:", error);
+      }
 
-        setSession(data?.session || null);
-        setLoading(false);
-      });
+      setSession(data?.session || null);
+      setLoading(false);
+    });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(
-      (_event, nextSession) => {
-        if (!active) return;
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (!active) return;
 
-        setSession(nextSession);
-        setLoading(false);
-      },
-    );
+      setSession(nextSession);
+      setLoading(false);
+    });
 
     return () => {
       active = false;
@@ -146,11 +127,7 @@ export default function App() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="loading">
-        Loading TRAVA...
-      </div>
-    );
+    return <div className="loading">Loading TRAVA...</div>;
   }
 
   if (!session) {
@@ -180,16 +157,11 @@ export default function App() {
           <AIChatScreen />
         ) : currentScreen === "chat" ? (
           <UserChatScreen
-            key={
-              chatInquiry?.navigationId ||
-              "messages-inbox"
-            }
+            key={chatInquiry?.navigationId || "messages-inbox"}
             onBack={goToExplore}
             initialInquiry={chatInquiry}
             inquiryContext={chatInquiry}
-            onInquiryHandled={
-              clearHandledInquiry
-            }
+            onInquiryHandled={clearHandledInquiry}
           />
         ) : currentScreen === "profile" ? (
           <ProfileScreen />

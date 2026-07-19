@@ -1,0 +1,122 @@
+.list-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
+}
+.list-header {
+  padding: 1rem;
+  border-bottom: 1px solid #eaeaea;
+}
+.list-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #111;
+}
+.rooms-list {
+  flex: 1;
+  overflow-y: auto;
+}
+.room-card {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 1rem;
+  border: none;
+  background: none;
+  text-align: left;
+  border-bottom: 1px solid #f9f9f9;
+}
+.room-card:active {
+  background: #f0f0f0;
+}
+.room-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #0070f3;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  margin-right: 1rem;
+}
+.room-info {
+  flex: 1;
+  min-width: 0;
+}
+.room-top {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+.room-name {
+  font-weight: 600;
+  color: #222;
+}
+.room-time {
+  font-size: 0.75rem;
+  color: #888;
+}
+.room-preview {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* --- SEARCH BAR WRAPPER --- */
+.search-bar-container {
+  width: 100%;
+  margin-top: 14px;
+  margin-bottom: 8px;
+  box-sizing: border-box;
+}
+
+/* --- THE SEARCH INPUT FIELD --- */
+.room-search-input {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 14px;
+  color: #1c1c1e;
+  border: 1px solid #e5e5ea;
+  border-radius: 12px;
+  background-color: #f2f2f7;
+  outline: none;
+  font-family: inherit;
+  transition: all 0.2s ease-in-out;
+  box-sizing: border-box;
+}
+
+/* --- INTERACTIVE STATES --- */
+.room-search-input::placeholder {
+  color: #8e8e93;
+}
+
+.room-search-input:focus {
+  background-color: #ffffff;
+  border-color: #007aff;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
+}
+
+/* --- OPTIONAL CLEANUPS FOR SEARCH VIEWS --- */
+.system-note {
+  text-align: center;
+  color: #8e8e93;
+  font-size: 14px;
+  margin: 32px auto;
+  font-weight: 400;
+}
+
+/* Prevents long previews from breaking layout shapes */
+.room-preview {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 4px 0 0 0;
+  font-size: 13px;
+  color: #8e8e93;
+}
