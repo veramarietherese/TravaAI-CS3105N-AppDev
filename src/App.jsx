@@ -50,7 +50,8 @@ export default function App() {
     setCurrentScreen("explore");
   }
   const { user } = useAuth();
-  const displayName = user?.user_metadata?.full_name || user?.email || "traveler";
+  const displayName =
+    user?.user_metadata?.full_name || user?.email || "traveler";
 
   function goToTrips() {
     setCurrentScreen("trips");
