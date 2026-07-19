@@ -1,26 +1,35 @@
+
+
 import { useState } from "react";
-import { supabase } from "./supabaseClient"; // Import our shared client
+import { supabase } from "./supabaseClient";
+import onboarding1 from "../assets/onboarding-1.gif";
+import onboarding2 from "../assets/onboarding-2.gif";
+import "./AuthScreen.css";
 
 export default function AuthScreen() {
+  const [screen, setScreen] = useState(0);
+  const [mode, setMode] = useState("login");
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  // New state tracking the selected account role (defaulting to 'Traveler')
+
   const [userType, setUserType] = useState("Traveler");
   const [errorMessage, setErrorMessage] = useState("");
+
+  const nextScreen = () => {
+    if (screen < 2) setScreen((current) => current + 1);
+  };
 
   const handleSignUp = async (e) => {
     e.preventDefault();
     setErrorMessage("");
 
-    // Step 1: Create the secure authentication account
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: {
-          full_name: name,
-        },
+        data: { full_name: name },
       },
     });
 
@@ -29,26 +38,20 @@ export default function AuthScreen() {
       return;
     }
 
-    // Step 2: Manually insert their profile data into public.users using their new ID
     if (authData?.user) {
-      const { error: dbError } = await supabase
-        .from("users") // Looks directly at public.users
-        .insert([
-          {
-            user_id: authData.user.id, // Links the newly generated auth UUID
-            email: email,
-            full_name: name || "New User",
-            user_type: userType, // 'Traveler' or 'Agency'
-          },
-        ]);
+      const { error: dbError } = await supabase.from("users").insert([
+        {
+          user_id: authData.user.id,
+          email,
+          full_name: name || "New User",
+          user_type: userType,
+        },
+      ]);
 
       if (dbError) {
-        console.error("Database Insert Error:", dbError);
         setErrorMessage(
           "Account created, but profile setup failed: " + dbError.message,
         );
-      } else {
-        console.log("Registration completely successful!");
       }
     }
   };
@@ -56,171 +59,175 @@ export default function AuthScreen() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setErrorMessage("");
+
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+
     if (error) setErrorMessage("Error: " + error.message);
   };
 
   const handleAnonymousTest = async () => {
     setErrorMessage("");
+
     const { error } = await supabase.auth.signInAnonymously();
+
     if (error) setErrorMessage(error.message);
   };
 
+  if (screen === 0) {
+    return (
+      <OnboardingScreen
+      image={onboarding1}
+        activeIndex={0}
+        onNext={nextScreen}
+      />
+    );
+  }
+
+  if (screen === 1) {
+    return (
+      <OnboardingScreen
+      image={onboarding2}
+        activeIndex={1}
+        onNext={nextScreen}
+      />
+    );
+  }
+
   return (
-    <div
-      className="auth-container"
-      style={{
-        padding: "24px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "16px",
-        maxWidth: "400px",
-        margin: "0 auto",
-      }}
-    >
-      <h2>Sign In / Create Account</h2>
-      <form style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-        {/* Account Role Selector */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          <label
-            style={{ fontSize: "14px", fontWeight: "640", color: "#4b5563" }}
-          >
-            I am signing up as a:
-          </label>
-          <div style={{ display: "flex", gap: "8px" }}>
-            <button
-              type="button"
-              onClick={() => setUserType("Traveler")}
-              style={{
-                flex: 1,
-                padding: "8px",
-                borderRadius: "4px",
-                border:
-                  userType === "Traveler"
-                    ? "2px solid #2563eb"
-                    : "1px solid #d1d5db",
-                backgroundColor: userType === "Traveler" ? "#eff6ff" : "#fff",
-                color: userType === "Traveler" ? "#2563eb" : "#374151",
-                fontWeight: userType === "Traveler" ? "600" : "400",
-                cursor: "pointer",
-              }}
-            >
-              🧳 Traveler
-            </button>
-            <button
-              type="button"
-              onClick={() => setUserType("Agency")}
-              style={{
-                flex: 1,
-                padding: "8px",
-                borderRadius: "4px",
-                border:
-                  userType === "Agency"
-                    ? "2px solid #2563eb"
-                    : "1px solid #d1d5db",
-                backgroundColor: userType === "Agency" ? "#eff6ff" : "#fff",
-                color: userType === "Agency" ? "#2563eb" : "#374151",
-                fontWeight: userType === "Agency" ? "600" : "400",
-                cursor: "pointer",
-              }}
-            >
-              🏢 Travel Agency
-            </button>
-          </div>
-        </div>
-
-        {/* Full Name Input field */}
-        <input
-          type="text"
-          placeholder={
-            userType === "Traveler" ? "Full Name" : "Agency Business Name"
-          }
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          style={{
-            padding: "8px",
-            borderRadius: "4px",
-            border: "1px solid #d1d5db",
-          }}
-        />
-
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          style={{
-            padding: "8px",
-            borderRadius: "4px",
-            border: "1px solid #d1d5db",
-          }}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={{
-            padding: "8px",
-            borderRadius: "4px",
-            border: "1px solid #d1d5db",
-          }}
-        />
-
-        <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
-          <button
-            type="button"
-            onClick={handleLogin}
-            style={{ flex: 1, padding: "8px", cursor: "pointer" }}
-          >
-            Log In
-          </button>
-          <button
-            type="button"
-            onClick={handleSignUp}
-            style={{
-              flex: 1,
-              padding: "8px",
-              backgroundColor: "#2563eb",
-              color: "#fff",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-              fontWeight: "600",
-            }}
-          >
-            Sign Up
-          </button>
-        </div>
-      </form>
-
-      <div style={{ textAlign: "center", margin: "4px 0", color: "#6b7280" }}>
-        or
+  <main className="auth-shell login-shell">
+    <section className="login-card premium-login">
+      <div className="login-brand">
+        <p className="eyebrow">TRAVA AI</p>
+        <h1>Welcome back</h1>
+        <p className="login-caption">
+          Continue planning your trips with your personal AI travel workspace.
+        </p>
       </div>
 
-      <button
-        onClick={handleAnonymousTest}
-        style={{
-          padding: "10px",
-          background: "#34d399",
-          border: "none",
-          color: "#fff",
-          cursor: "pointer",
-          borderRadius: "4px",
-          fontWeight: "600",
-        }}
+      <form
+        className="premium-form"
+        onSubmit={mode === "login" ? handleLogin : handleSignUp}
       >
-        ⚡ Fast Test (Skip Forms)
-      </button>
+        {mode === "signup" && (
+          <>
+            <div className="role-picker clean-role-picker">
+              <button
+                type="button"
+                className={userType === "Traveler" ? "selected" : ""}
+                onClick={() => setUserType("Traveler")}
+              >
+                Traveler
+              </button>
 
-      {errorMessage && (
-        <p style={{ color: "red", fontSize: "14px", marginTop: "4px" }}>
-          {errorMessage}
+              <button
+                type="button"
+                className={userType === "Agency" ? "selected" : ""}
+                onClick={() => setUserType("Agency")}
+              >
+                Travel Agency
+              </button>
+            </div>
+
+            <label className="clean-field">
+              <span>
+                {userType === "Traveler" ? "Full Name" : "Agency Business Name"}
+              </span>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </label>
+          </>
+        )}
+
+        <label className="clean-field">
+          <span>Email Address</span>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </label>
+
+        <label className="clean-field">
+          <span>Password</span>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </label>
+
+        {mode === "login" && (
+          <div className="clean-options">
+            <label>
+              <input type="checkbox" />
+              Remember me
+            </label>
+
+            <button type="button">Forgot password?</button>
+          </div>
+        )}
+
+        <button type="submit" className="premium-auth-btn">
+          {mode === "login" ? "Sign in" : "Create account"}
+        </button>
+
+        <button
+          type="button"
+          className="quiet-test-btn"
+          onClick={handleAnonymousTest}
+        >
+          Continue as test user
+        </button>
+
+        <p className="switch-mode clean-switch">
+          {mode === "login" ? "New to TRAVA AI?" : "Already have an account?"}
+
+          <button
+            type="button"
+            onClick={() => {
+              setErrorMessage("");
+              setMode(mode === "login" ? "signup" : "login");
+            }}
+          >
+            {mode === "login" ? "Create account" : "Sign in"}
+          </button>
         </p>
-      )}
-    </div>
+
+        {errorMessage && <p className="auth-error">{errorMessage}</p>}
+      </form>
+    </section>
+  </main>
+);
+}
+
+function OnboardingScreen({ image, activeIndex, onNext }) {
+  return (
+    <main className="auth-shell onboarding-shell" onClick={onNext}>
+      <section className="onboard-card gif-card">
+        <img className="onboard-gif" src={image} alt="TRAVA AI onboarding" />
+
+        <div className="onboard-bottom">
+          <div className="pager">
+            {[0, 1, 2].map((item) => (
+              <span
+                key={item}
+                className={item === activeIndex ? "active" : ""}
+              />
+            ))}
+          </div>
+
+          <p className="tap-copy">Tap anywhere to continue</p>
+        </div>
+      </section>
+    </main>
   );
 }
