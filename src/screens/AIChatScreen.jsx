@@ -17,6 +17,7 @@ import {
 
 import { useAuth } from "../auth/AuthContext";
 import "./AIChatScreen.css";
+import { supabase } from "../auth/supabaseClient";
 
 const STORAGE_PREFIX = "trava-ai-conversation";
 
@@ -175,6 +176,46 @@ function DestinationCards({ cards, onSelect }) {
   );
 }
 
+function PromptConfirmModal({ prompt, onConfirm, onCancel }) {
+  const [editedPrompt, setEditedPrompt] = useState(prompt);
+
+  return (
+    <div className="trava-modal-overlay" onClick={onCancel}>
+      <div className="trava-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="trava-modal-header">
+          <h2>Review your prompt</h2>
+          <p>Edit the message below before sending it to TravaAI.</p>
+        </div>
+
+        <textarea
+          className="trava-modal-editor"
+          value={editedPrompt}
+          onChange={(e) => setEditedPrompt(e.target.value)}
+          rows={5}
+        />
+
+        <div className="trava-modal-actions">
+          <button
+            type="button"
+            className="trava-modal-cancel"
+            onClick={onCancel}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="trava-modal-confirm"
+            onClick={() => onConfirm(editedPrompt)}
+            disabled={!editedPrompt.trim()}
+          >
+            Confirm ✈️
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AIChatScreen({
   onBack,
   tripContext = null,
@@ -195,11 +236,87 @@ export default function AIChatScreen({
   const [listening, setListening] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [notice, setNotice] = useState("");
+  const [pendingPrompt, setPendingPrompt] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [pendingCard, setPendingCard] = useState(null);
+  const [activeTripId, setActiveTripId] = useState(null);
 
   const endRef = useRef(null);
   const inputRef = useRef(null);
   const abortRef = useRef(null);
   const recognitionRef = useRef(null);
+
+  useEffect(() => {
+  async function fetchLatestTrip() {
+    if (!user?.id) return;
+
+    // check localStorage first (if they opened a specific trip)
+    const stored = localStorage.getItem("trava-active-trip-id");
+    if (stored) {
+      setActiveTripId(stored);
+      return;
+    }
+
+    // otherwise fetch their most recently created trip
+    const { data, error } = await supabase
+      .from("trips")
+      .select("trip_id")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (!error && data) {
+      setActiveTripId(data.trip_id);
+    }
+  }
+
+  fetchLatestTrip();
+}, [user?.id]);
+
+async function handleModalConfirm(editedPrompt) {
+  setModalOpen(false);
+  setPendingPrompt(null);
+
+  const destination = pendingCard?.title || "";
+  const country = pendingCard?.country || "";
+
+  // const activeTripId = localStorage.getItem("trava-active-trip-id");
+  if (activeTripId && destination) {
+  try {
+    await supabase
+      .from("trips")
+      .update({ destination })
+      .eq("trip_id", activeTripId);
+  } catch (err) {
+    console.error("Failed to update trip destination:", err);
+  }
+}
+
+  setMessages((prev) => [
+    ...prev,
+    {
+      id: createId("user"),
+      role: "user",
+      text: editedPrompt,
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: createId("assistant"),
+      role: "assistant",
+      text: `${destination}${country ? `, ${country}` : ""} is a great choice! Updating your planned trip right now! ✈️`,
+      createdAt: new Date().toISOString(),
+    },
+  ]);
+
+  setPendingCard(null);
+}
+
+function handleModalCancel() {
+  setModalOpen(false);
+  setPendingPrompt(null);
+  setPendingCard(null);
+}
 
   const welcomeMessage = useMemo(
     () => ({
@@ -260,11 +377,12 @@ export default function AIChatScreen({
     setNotice("Generation stopped.");
   }
 
-  function handleDestinationCard(card) {
-    const question = `Create a practical ${card.subtitle.toLowerCase()} plan for ${card.title}. Include a realistic Philippine-peso budget and the best areas to stay.`;
-    setInput(question);
-    inputRef.current?.focus();
-  }
+function handleDestinationCard(card) {
+  const question = `Give me a practical ${card.subtitle.toLowerCase()} plan for ${card.title}. Include a realistic Philippine-peso budget and the best areas to stay. Skip any introductory greeting — go straight into the plan.`;
+  setPendingPrompt(question);
+  setPendingCard(card);
+  setModalOpen(true);
+}
 
   async function sendMessage(rawMessage = input) {
     const messageText = String(rawMessage || "").trim();
@@ -629,6 +747,13 @@ export default function AIChatScreen({
           or the travel agency.
         </p>
       </div>
+      {modalOpen && pendingPrompt && (
+  <PromptConfirmModal
+    prompt={pendingPrompt}
+    onConfirm={handleModalConfirm}
+    onCancel={handleModalCancel}
+  />
+)}
     </section>
   );
 }

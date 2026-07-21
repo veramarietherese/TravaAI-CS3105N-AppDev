@@ -970,6 +970,8 @@ export default function TripsScreen() {
         : "Overview",
     );
     setMenuOpen(false);
+
+    localStorage.setItem("trava-active-trip-id", tripId);
   }
 
   function closeTrip() {

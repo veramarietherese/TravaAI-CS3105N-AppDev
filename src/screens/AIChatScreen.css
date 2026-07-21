@@ -581,3 +581,99 @@
     padding-left: 10px;
   }
 }
+
+.trava-modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: center;        
+  justify-content: center;    
+  padding: 24px;
+}
+
+.trava-modal {
+  width: 100%;
+  max-width: 420px;    /* ← was 360px */
+  background: #fff;
+  border-radius: 24px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
+  animation: popIn 0.2s ease;
+}
+
+@keyframes popIn {
+  from { transform: scale(0.92); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
+.trava-modal-header h2 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 4px;
+}
+
+.trava-modal-header p {
+  font-size: 13px;
+  color: #888;
+}
+
+.trava-modal-editor {
+  width: 100%;
+  padding: 14px 16px;        
+  border-radius: 14px;
+  border: 1.5px solid rgba(0, 0, 0, 0.1);
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 2.0;           
+  letter-spacing: 0.01em;    
+  color: #1a1a2e;
+  resize: none;
+  background: #f9f9fb;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.trava-modal-editor:focus {
+  border-color: #c084fc;
+}
+
+.trava-modal-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.trava-modal-cancel {
+  flex: 1;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(0, 0, 0, 0.1);
+  background: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+}
+
+.trava-modal-confirm {
+  flex: 2;
+  padding: 12px;
+  border-radius: 14px;
+  border: none;
+  background: linear-gradient(135deg, #c084fc, #ec4899);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.trava-modal-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
