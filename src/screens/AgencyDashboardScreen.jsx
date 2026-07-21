@@ -363,29 +363,6 @@ export default function AgencyDashboardScreen({
       ========================================================= */}
       {activeTab === "packages" && (
         <>
-          {/* AI Shortcut Card */}
-          <section className="agency-ai-shortcut-card">
-            <div className="ai-shortcut-info">
-              <Sparkles size={20} className="ai-sparkle-icon" />
-              <div>
-                <h4>Need help drafting tour package specs?</h4>
-                <p>
-                  Use our AI Strategist to brainstorm high-converting
-                  itineraries, pricing, and specs.
-                </p>
-              </div>
-            </div>
-            {onNavigateToChat && (
-              <button
-                type="button"
-                className="agency-secondary-btn"
-                onClick={onNavigateToChat}
-              >
-                Open AI Chatbot <Send size={14} style={{ marginLeft: 6 }} />
-              </button>
-            )}
-          </section>
-
           {/* Form Panel */}
           <section className="agency-panel">
             <div className="agency-panel-header">
