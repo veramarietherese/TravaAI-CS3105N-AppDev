@@ -4,26 +4,39 @@ import {
   MessageCircle,
   Sparkles,
   UserRound,
+  LayoutDashboard,
 } from "lucide-react";
 
 import "./bottom-nav.css";
 
 export default function BottomNav({
   currentScreen,
+  userType, // Accepts "Agency" or "Traveler"
   onExplore,
   onTrips,
+  onDashboard, // Added callback handler for Agency
   onSmartMatch,
   onMessages,
   onProfile,
   unreadMessages = 0,
 }) {
+  console.log("userType: ", userType);
+  const firstItem =
+    userType === "Agency"
+      ? {
+          key: "dashboard",
+          label: "Dashboard",
+          icon: LayoutDashboard,
+          onClick: onDashboard,
+        }
+      : {
+          key: "explore",
+          label: "Explore",
+          icon: Compass,
+          onClick: onExplore,
+        };
   const items = [
-    {
-      key: "explore",
-      label: "Explore",
-      icon: Compass,
-      onClick: onExplore,
-    },
+    firstItem,
     {
       key: "trips",
       label: "Trips",
@@ -57,8 +70,7 @@ export default function BottomNav({
       {items.map((item) => {
         const Icon = item.icon;
         const isActive = currentScreen === item.key;
-        const hasBadge =
-          item.key === "chat" && Number(item.badge) > 0;
+        const hasBadge = item.key === "chat" && Number(item.badge) > 0;
 
         return (
           <button
@@ -88,9 +100,7 @@ export default function BottomNav({
               )}
             </span>
 
-            <span className="bottom-nav-label">
-              {item.label}
-            </span>
+            <span className="bottom-nav-label">{item.label}</span>
           </button>
         );
       })}

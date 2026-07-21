@@ -9,6 +9,7 @@ import TripsScreen from "./screens/TripsScreen";
 import ProfileScreen from "./screens/ProfileScreen";
 import AIChatScreen from "./screens/AIChatScreen";
 import UserChatScreen from "./screens/UserChatScreen";
+import AgencyDashboardScreen from "./screens/AgencyDashboardScreen";
 import { useAuth } from "./auth/AuthContext";
 
 import "./index.css";
@@ -39,7 +40,15 @@ function savePendingInquiry(inquiry) {
 }
 
 export default function App() {
-  const [currentScreen, setCurrentScreen] = useState("explore");
+  const { user } = useAuth();
+  // 1. Identify user type (safely fallback to Traveler if metadata is missing)
+  const isAgency = user?.user_metadata?.role === "Agency";
+  console.log("isAgency: ", isAgency);
+  console.log(isAgency ? "Agency" : "Traveler");
+  //2. Set the initial landing screen based on their role
+  const [currentScreen, setCurrentScreen] = useState(
+    isAgency ? "dashboard" : "explore",
+  );
 
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -49,7 +58,10 @@ export default function App() {
   function goToExplore() {
     setCurrentScreen("explore");
   }
-  const { user } = useAuth();
+  function goToDashboard() {
+    setCurrentScreen("dashboard");
+  } // New handler
+
   const displayName =
     user?.user_metadata?.full_name || user?.email || "traveler";
 
@@ -144,6 +156,7 @@ export default function App() {
   return (
     <main className="app-shell">
       <section className="phone">
+        {/* 3. Conditional Screen Rendering */}
         {currentScreen === "explore" ? (
           <HomeScreen
             onTrips={goToTrips}
@@ -152,6 +165,8 @@ export default function App() {
             onProfile={goToProfile}
             onInquire={openInquiryChat}
           />
+        ) : currentScreen === "dashboard" ? (
+          <AgencyDashboardScreen /> // Render her dashboard screen here
         ) : currentScreen === "trips" ? (
           <TripsScreen />
         ) : currentScreen === "smartmatch" ? (
@@ -178,6 +193,8 @@ export default function App() {
 
         <BottomNav
           currentScreen={currentScreen}
+          userType={isAgency ? "Agency" : "Traveler"}
+          onDashboard={goToDashboard} // Provide the agency click handler
           onExplore={goToExplore}
           onTrips={goToTrips}
           onSmartMatch={goToSmartMatch}
