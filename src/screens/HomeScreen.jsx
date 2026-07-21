@@ -501,67 +501,9 @@ export default function HomeScreen({
     loadDashboard();
   }
 
-  if (view === "tours" || view === "agencies") {
-    const isTours = view === "tours";
-
-    return (
-      <div className="scroll-area trava-directory-screen">
-        <header className="trava-directory-header">
-          <button type="button" onClick={() => setView("dashboard")}>
-            <ArrowLeft size={20} />
-          </button>
-
-          <div>
-            <span>{isTours ? "TRAVEL DISCOVERY" : "TRUSTED PARTNERS"}</span>
-            <h1>{isTours ? "Tour Packages" : "Travel Agencies"}</h1>
-          </div>
-        </header>
-
-        <label className="trava-directory-search">
-          <Search size={19} />
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder={
-              isTours
-                ? "Search destination or tour style"
-                : "Search agency or specialty"
-            }
-          />
-        </label>
-
-        {isTours ? (
-          <div className="trava-directory-tour-grid">
-            {visibleTours.map((tour) => (
-              <TourCard
-                key={tour.package_id}
-                tour={tour}
-                onOpen={() => openListing("tour", tour)}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="trava-directory-agency-grid">
-            {visibleAgencies.map((agency) => (
-              <AgencyCard
-                key={agency.agency_id}
-                agency={agency}
-                onOpen={() => openListing("agency", agency)}
-              />
-            ))}
-          </div>
-        )}
-
-        {!loading &&
-          (isTours ? visibleTours.length === 0 : visibleAgencies.length === 0) && (
-            <div className="trava-empty-content">
-              <Search size={31} />
-              <strong>No results found</strong>
-              <span>Try another search term.</span>
-            </div>
-          )}
-      </div>
-    );
+  function switchView(nextView) {
+    setSearch("");
+    setView(nextView);
   }
 
   const totalBudget = Number(
@@ -575,262 +517,326 @@ export default function HomeScreen({
       ? Math.min(100, Math.round((upcomingSpent / totalBudget) * 100))
       : 0;
 
+  const isDirectory = view === "tours" || view === "agencies";
+  const isTours = view === "tours";
+
   return (
-    <div className="scroll-area trava-home-dashboard">
-      <header className="trava-home-header">
-        <div>
-          <p>
-            Hi,{" "}
-            {user?.user_metadata?.full_name ||
-              user?.email?.split("@")[0] ||
-              "Explorer"}
-            ! 👋
-          </p>
+    <>
+      {isDirectory ? (
+        <div className="scroll-area trava-directory-screen">
+          <header className="trava-directory-header">
+            <button type="button" onClick={() => setView("dashboard")}>
+              <ArrowLeft size={20} />
+            </button>
 
-          <h1>
-            Where will TRAVA AI
-            <br />
-            take <em>you</em> next?
-          </h1>
-        </div>
+            <div>
+              <span>{isTours ? "TRAVEL DISCOVERY" : "TRUSTED PARTNERS"}</span>
+              <h1>{isTours ? "Tour Packages" : "Travel Agencies"}</h1>
+            </div>
+          </header>
 
-        <button
-          type="button"
-          className="trava-notification-button"
-          onClick={() => setNotificationsOpen((current) => !current)}
-        >
-          <Bell size={25} />
-          <span />
-        </button>
+          <label className="trava-directory-search">
+            <Search size={19} />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={
+                isTours
+                  ? "Search destination or tour style"
+                  : "Search agency or specialty"
+              }
+            />
+          </label>
 
-        {notificationsOpen && (
-          <section className="trava-notification-popover">
-            <header>
-              <strong>Notifications</strong>
-              <button
-                type="button"
-                onClick={() => setNotificationsOpen(false)}
-              >
-                <X size={17} />
-              </button>
-            </header>
+          {isTours ? (
+            <div className="trava-directory-tour-grid">
+              {visibleTours.map((tour) => (
+                <TourCard
+                  key={tour.package_id}
+                  tour={tour}
+                  onOpen={() => openListing("tour", tour)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="trava-directory-agency-grid">
+              {visibleAgencies.map((agency) => (
+                <AgencyCard
+                  key={agency.agency_id}
+                  agency={agency}
+                  onOpen={() => openListing("agency", agency)}
+                />
+              ))}
+            </div>
+          )}
 
-            {upcomingTrip ? (
-              <article>
-                <Sparkles size={18} />
-                <div>
-                  <strong>{upcomingTrip.trip_name || "Upcoming trip"}</strong>
-                  <span>
-                    Starts {formatTripDate(upcomingTrip.start_date)}
-                  </span>
-                </div>
-              </article>
-            ) : (
-              <p>No new notifications.</p>
+          {!loading &&
+            (isTours ? visibleTours.length === 0 : visibleAgencies.length === 0) && (
+              <div className="trava-empty-content">
+                <Search size={31} />
+                <strong>No results found</strong>
+                <span>Try another search term.</span>
+              </div>
             )}
-          </section>
-        )}
-      </header>
-
-      {error && <div className="trava-home-error">{error}</div>}
-
-      <section className="trava-footprint-card">
-        <div className="trava-footprint-heading">
-          <div className="trava-footprint-icon">🌿</div>
-
-          <div>
-            <h2>Travel Footprint</h2>
-            <p>Your adventures around the world</p>
-          </div>
         </div>
-
-        <div className="trava-globe-stage">
-          <TravelGlobe
-            flights={flights}
-            onVisitedCountriesChange={setVisitedCountries}
-          />
-        </div>
-
-        <div className="trava-travel-stats">
-          <article>
-            <span>◉</span>
-            <strong>{Math.round(stats.totalDistance).toLocaleString()} km</strong>
-            <small>Total Miles</small>
-          </article>
-
-          <article>
-            <Plane size={22} />
-            <strong>{stats.flights}</strong>
-            <small>Flights Taken</small>
-          </article>
-
-          <article>
-            <MapPin size={22} />
-            <strong>{stats.countries}</strong>
-            <small>Countries</small>
-          </article>
-
-          <article>
-            <CalendarDays size={22} />
-            <strong>{stats.days}</strong>
-            <small>Days Traveled</small>
-          </article>
-        </div>
-      </section>
-
-      <section className="trava-section-heading">
-        <h2>Upcoming Trips</h2>
-
-        <button type="button" onClick={onTrips}>
-          View All <ChevronRight size={18} />
-        </button>
-      </section>
-
-      {upcomingTrip ? (
-        <button
-          type="button"
-          className="trava-upcoming-trip"
-          onClick={onTrips}
-        >
-          <div
-            className="trava-upcoming-photo"
-            style={{
-              backgroundImage: `url(${
-                upcomingTrip.cover_image_url ||
-                upcomingTrip.image_url ||
-                ""
-              })`,
-            }}
-          >
-            <div className="trava-upcoming-shade" />
-
-            <div className="trava-upcoming-copy">
-              <h3>
-                {upcomingTrip.trip_name ||
-                  upcomingTrip.destination ||
-                  "Upcoming Trip"}
-              </h3>
-
+      ) : (
+        <div className="scroll-area trava-home-dashboard">
+          <header className="trava-home-header">
+            <div>
               <p>
-                <CalendarDays size={17} />
-                {formatTripDate(
-                  upcomingTrip.start_date,
-                  upcomingTrip.end_date,
-                )}
+                Hi,{" "}
+                {user?.user_metadata?.full_name ||
+                  user?.email?.split("@")[0] ||
+                  "Explorer"}
+                ! 👋
               </p>
 
-              <div className="trava-member-stack">
-                {upcomingMembers.slice(0, 3).map((member, index) => (
-                  <span key={member.member_id || `${member.user_id}-${index}`}>
-                    {index === 0 ? "🧑🏻" : index === 1 ? "👩🏻" : "🧑🏽"}
-                  </span>
-                ))}
-
-                {upcomingMembers.length > 3 && (
-                  <span>+{upcomingMembers.length - 3}</span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="trava-budget-strip">
-            <div>
-              <span>Budget used</span>
-              <strong>
-                {formatMoney(
-                  upcomingSpent,
-                  upcomingTrip.currency_code || "PHP",
-                )}{" "}
-                /{" "}
-                {formatMoney(
-                  totalBudget,
-                  upcomingTrip.currency_code || "PHP",
-                )}
-              </strong>
+              <h1>
+                Where will TRAVA AI
+                <br />
+                take <em>you</em> next?
+              </h1>
             </div>
 
-            <div className="trava-budget-progress">
-              <span style={{ width: `${budgetProgress}%` }} />
-            </div>
-          </div>
-        </button>
-      ) : (
-        <button
-          type="button"
-          className="trava-no-upcoming-trip"
-          onClick={onCreateTrip}
-        >
-          <CalendarDays size={30} />
-          <strong>No upcoming trip yet</strong>
-          <span>Create one to see it here automatically.</span>
-        </button>
-      )}
-
-      <section className="trava-quick-actions">
-        <h2>Quick Actions</h2>
-
-        <div>
-          {QUICK_ACTIONS.map((action) => (
             <button
               type="button"
-              key={action.key}
-              onClick={() => handleQuickAction(action.key)}
+              className="trava-notification-button"
+              onClick={() => setNotificationsOpen((current) => !current)}
             >
-              <ActionImage action={action} />
-              <strong>{action.title}</strong>
+              <Bell size={25} />
+              <span />
             </button>
-          ))}
-        </div>
-      </section>
 
-      <section className="trava-section-heading">
-        <h2>Tour Packages for You</h2>
+            {notificationsOpen && (
+              <section className="trava-notification-popover">
+                <header>
+                  <strong>Notifications</strong>
+                  <button
+                    type="button"
+                    onClick={() => setNotificationsOpen(false)}
+                  >
+                    <X size={17} />
+                  </button>
+                </header>
 
-        <button type="button" onClick={() => setView("tours")}>
-          See All <ChevronRight size={18} />
-        </button>
-      </section>
+                {upcomingTrip ? (
+                  <article>
+                    <Sparkles size={18} />
+                    <div>
+                      <strong>{upcomingTrip.trip_name || "Upcoming trip"}</strong>
+                      <span>
+                        Starts {formatTripDate(upcomingTrip.start_date)}
+                      </span>
+                    </div>
+                  </article>
+                ) : (
+                  <p>No new notifications.</p>
+                )}
+              </section>
+            )}
+          </header>
 
-      <div className="trava-tour-preview-grid">
-        {tourPackages.slice(0, 3).map((tour) => (
-          <TourCard
-            key={tour.package_id}
-            tour={tour}
-            compact
-            onOpen={() => openListing("tour", tour)}
-          />
-        ))}
-      </div>
+          {error && <div className="trava-home-error">{error}</div>}
 
-      {!loading && tourPackages.length === 0 && (
-        <div className="trava-inline-empty">
-          No tour packages are available yet.
-        </div>
-      )}
+          <section className="trava-footprint-card">
+            <div className="trava-footprint-heading">
+              <div className="trava-footprint-icon">🌿</div>
 
-      <section className="trava-section-heading trava-agency-heading">
-        <h2>Travel Agencies</h2>
+              <div>
+                <h2>Travel Footprint</h2>
+                <p>Your adventures around the world</p>
+              </div>
+            </div>
 
-        <button type="button" onClick={() => setView("agencies")}>
-          View All <ChevronRight size={18} />
-        </button>
-      </section>
+            <div className="trava-globe-stage">
+              <TravelGlobe
+                flights={flights}
+                onVisitedCountriesChange={setVisitedCountries}
+              />
+            </div>
 
-      <div className="trava-agency-preview-grid">
-        {agencies.slice(0, 3).map((agency) => (
-          <AgencyCard
-            key={agency.agency_id}
-            agency={agency}
-            compact
-            onOpen={() => openListing("agency", agency)}
-          />
-        ))}
-      </div>
+            <div className="trava-travel-stats">
+              <article>
+                <span>◉</span>
+                <strong>{Math.round(stats.totalDistance).toLocaleString()} km</strong>
+                <small>Total Miles</small>
+              </article>
 
-      {loading && (
-        <div className="trava-home-loading">
-          <LoaderCircle className="spin" size={24} />
-          Loading your travel dashboard...
+              <article>
+                <Plane size={22} />
+                <strong>{stats.flights}</strong>
+                <small>Flights Taken</small>
+              </article>
+
+              <article>
+                <MapPin size={22} />
+                <strong>{stats.countries}</strong>
+                <small>Countries</small>
+              </article>
+
+              <article>
+                <CalendarDays size={22} />
+                <strong>{stats.days}</strong>
+                <small>Days Traveled</small>
+              </article>
+            </div>
+          </section>
+
+          <section className="trava-section-heading">
+            <h2>Upcoming Trips</h2>
+
+            <button type="button" onClick={onTrips}>
+              View All <ChevronRight size={18} />
+            </button>
+          </section>
+
+          {upcomingTrip ? (
+            <button
+              type="button"
+              className="trava-upcoming-trip"
+              onClick={onTrips}
+            >
+              <div
+                className="trava-upcoming-photo"
+                style={{
+                  backgroundImage: `url(${
+                    upcomingTrip.cover_image_url ||
+                    upcomingTrip.image_url ||
+                    ""
+                  })`,
+                }}
+              >
+                <div className="trava-upcoming-shade" />
+
+                <div className="trava-upcoming-copy">
+                  <h3>
+                    {upcomingTrip.trip_name ||
+                      upcomingTrip.destination ||
+                      "Upcoming Trip"}
+                  </h3>
+
+                  <p>
+                    <CalendarDays size={17} />
+                    {formatTripDate(
+                      upcomingTrip.start_date,
+                      upcomingTrip.end_date,
+                    )}
+                  </p>
+
+                  <div className="trava-member-stack">
+                    {upcomingMembers.slice(0, 3).map((member, index) => (
+                      <span key={member.member_id || `${member.user_id}-${index}`}>
+                        {index === 0 ? "🧑🏻" : index === 1 ? "👩🏻" : "🧑🏽"}
+                      </span>
+                    ))}
+
+                    {upcomingMembers.length > 3 && (
+                      <span>+{upcomingMembers.length - 3}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="trava-budget-strip">
+                <div>
+                  <span>Budget used</span>
+                  <strong>
+                    {formatMoney(
+                      upcomingSpent,
+                      upcomingTrip.currency_code || "PHP",
+                    )}{" "}
+                    /{" "}
+                    {formatMoney(
+                      totalBudget,
+                      upcomingTrip.currency_code || "PHP",
+                    )}
+                  </strong>
+                </div>
+
+                <div className="trava-budget-progress">
+                  <span style={{ width: `${budgetProgress}%` }} />
+                </div>
+              </div>
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="trava-no-upcoming-trip"
+              onClick={onCreateTrip}
+            >
+              <CalendarDays size={30} />
+              <strong>No upcoming trip yet</strong>
+              <span>Create one to see it here automatically.</span>
+            </button>
+          )}
+
+          <section className="trava-quick-actions">
+            <h2>Quick Actions</h2>
+
+            <div>
+              {QUICK_ACTIONS.map((action) => (
+                <button
+                  type="button"
+                  key={action.key}
+                  onClick={() => handleQuickAction(action.key)}
+                >
+                  <ActionImage action={action} />
+                  <strong>{action.title}</strong>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="trava-section-heading">
+            <h2>Tour Packages for You</h2>
+
+            <button type="button" onClick={() => switchView("tours")}>
+              See All <ChevronRight size={18} />
+            </button>
+          </section>
+
+          <div className="trava-tour-preview-grid">
+            {tourPackages.slice(0, 3).map((tour) => (
+              <TourCard
+                key={tour.package_id}
+                tour={tour}
+                compact
+                onOpen={() => openListing("tour", tour)}
+              />
+            ))}
+          </div>
+
+          {!loading && tourPackages.length === 0 && (
+            <div className="trava-inline-empty">
+              No tour packages are available yet.
+            </div>
+          )}
+
+          <section className="trava-section-heading trava-agency-heading">
+            <h2>Travel Agencies</h2>
+
+            <button type="button" onClick={() => switchView("agencies")}>
+              View All <ChevronRight size={18} />
+            </button>
+          </section>
+
+          <div className="trava-agency-preview-grid">
+            {agencies.slice(0, 3).map((agency) => (
+              <AgencyCard
+                key={agency.agency_id}
+                agency={agency}
+                compact
+                onOpen={() => openListing("agency", agency)}
+              />
+            ))}
+          </div>
+
+          {loading && (
+            <div className="trava-home-loading">
+              <LoaderCircle className="spin" size={24} />
+              Loading your travel dashboard...
+            </div>
+          )}
         </div>
       )}
 
@@ -926,7 +932,7 @@ export default function HomeScreen({
           </form>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
