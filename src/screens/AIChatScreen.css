@@ -653,12 +653,13 @@
   flex: 1;
   padding: 12px;
   border-radius: 14px;
-  border: 1.5px solid rgba(0, 0, 0, 0.1);
-  background: #fff;
+  border: 1px solid #e2e8f0;
+  background: #f1f5f9;
   font-size: 14px;
   font-weight: 600;
-  color: #666;
+  color: #475569;
   cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
 }
 
 .trava-modal-confirm {
@@ -676,4 +677,87 @@
 .trava-modal-confirm:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Create or edit pop up */
+.trava-modal-cancel:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.trava-modal-cancel:active {
+  transform: scale(0.98);
+}
+
+.trava-modal-confirm,
+.btn-create-trip {
+  flex: 2;
+  width: 100%;
+  padding: 12px;
+  border-radius: 14px;
+  border: none;
+  background: linear-gradient(135deg, #c084fc, #ec4899);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(236, 72, 153, 0.25);
+  transition: opacity 0.2s ease, transform 0.1s ease;
+}
+
+.trava-modal-confirm:hover,
+.btn-create-trip:hover {
+  opacity: 0.92;
+}
+
+.trava-modal-confirm:active,
+.btn-create-trip:active {
+  transform: scale(0.98);
+}
+
+.trava-modal-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn-update-trip {
+  width: 100%;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(192, 132, 252, 0.45);
+  background: #f5f0ff;
+  color: #7e22ce;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+}
+
+.btn-update-trip:hover {
+  background: #ede4ff;
+  border-color: rgba(192, 132, 252, 0.75);
+}
+
+.btn-update-trip:active {
+  transform: scale(0.98);
+}
+
+.trava-modal-choice-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 8px 0 4px;
+}
+
+.trava-modal-cancel-full {
+  width: 100%;
 }

@@ -15,8 +15,7 @@ const CLIENT_ORIGIN =
 const GEMINI_MODEL =
   process.env.GEMINI_MODEL || "gemini-2.5-flash";
 const GEMINI_FALLBACK_MODEL =
-  process.env.GEMINI_FALLBACK_MODEL ||
-  "gemini-2.5-flash-lite";
+  process.env.GEMINI_FALLBACK_MODEL || "gemini-3.5-flash-lite";
 
 if (!process.env.GEMINI_API_KEY) {
   console.error(
@@ -663,4 +662,50 @@ app.listen(PORT, () => {
   console.log(
     `TRAVA AI server running at http://localhost:${PORT}`,
   );
+});
+
+app.post("/api/itinerary", async (request, response) => {
+  const { destination, numberOfDays, budget } = request.body;
+
+  if (!destination) {
+    return response.status(400).json({ error: "Destination is required." });
+  }
+
+  const prompt = `Generate a detailed ${numberOfDays || 5}-day travel itinerary for ${destination} with a budget of ${budget || "₱50,000"} in Philippine pesos.
+
+  Keep each activity description under 15 words. Return ONLY a valid JSON array — no markdown, no backticks, no explanation:
+  [
+    {
+      "dayNumber": 1,
+      "title": "string — short day theme",
+      "activities": [
+        {
+          "time": "string — e.g. 9:00 AM",
+          "title": "string — activity name",
+          "location": "string — place name",
+          "note": "string — max 15 words",
+          "cost": number
+        } 
+      ],
+      "totalDayCost": number
+    }
+  ]`;
+
+  try {
+    const result = await ai.models.generateContent({
+      model: GEMINI_FALLBACK_MODEL, // ← was GEMINI_MODEL
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      config: { maxOutputTokens: 8000 },
+    });
+
+    const raw = cleanResponseText(result?.text, 10000)
+      .replace(/```json|```/g, "")
+      .trim();
+
+    const itinerary = JSON.parse(raw);
+    return response.json({ itinerary });
+  } catch (error) {
+    console.error("Itinerary generation failed:", error?.message);
+    return response.status(500).json({ error: "Failed to generate itinerary." });
+  }
 });

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef } from "react"
 import maplibregl from "maplibre-gl"
 import "maplibre-gl/dist/maplibre-gl.css"
+import { geocodePlace } from "../services/geocode"
 
-export default function TripMap({ stops = [] }) {
+export default function TripMap({ stops = [], destination = "" }) {
   const mapRef = useRef(null)
   const mapInstance = useRef(null)
   const markersRef = useRef([])
@@ -26,6 +27,27 @@ export default function TripMap({ stops = [] }) {
       new maplibregl.NavigationControl({ showCompass: false }),
       "bottom-right",
     )
+
+    mapInstance.current.once("load", async () => {
+      console.log("map loaded, destination:", destination, "validStops:", validStops.length)
+      if (validStops.length > 0 || !destination) return
+
+      try {
+        const results = await geocodePlace(destination)
+        console.log("geocode results:", results)
+        if (!results?.length) return
+
+        const { lat, lng } = results[0]
+        console.log("flying to:", lat, lng)
+        mapInstance.current?.flyTo({
+          center: [Number(lng), Number(lat)],
+          zoom: 5,
+          duration: 1200,
+        })
+      } catch (err) {
+        console.error("Failed to geocode destination:", err)
+      }
+    })
   }, [])
 
   useEffect(() => {
@@ -61,7 +83,6 @@ export default function TripMap({ stops = [] }) {
     })
 
     const bounds = new maplibregl.LngLatBounds()
-
     coordinates.forEach((coordinate) => bounds.extend(coordinate))
 
     map.fitBounds(bounds, {
@@ -74,10 +95,7 @@ export default function TripMap({ stops = [] }) {
       if (map.getSource("trip-route")) {
         map.getSource("trip-route").setData({
           type: "Feature",
-          geometry: {
-            type: "LineString",
-            coordinates,
-          },
+          geometry: { type: "LineString", coordinates },
         })
         return
       }
@@ -86,10 +104,7 @@ export default function TripMap({ stops = [] }) {
         type: "geojson",
         data: {
           type: "Feature",
-          geometry: {
-            type: "LineString",
-            coordinates,
-          },
+          geometry: { type: "LineString", coordinates },
         },
       })
 
@@ -97,10 +112,7 @@ export default function TripMap({ stops = [] }) {
         id: "trip-route-line",
         type: "line",
         source: "trip-route",
-        layout: {
-          "line-cap": "round",
-          "line-join": "round",
-        },
+        layout: { "line-cap": "round", "line-join": "round" },
         paint: {
           "line-color": "#7657ff",
           "line-width": 4,

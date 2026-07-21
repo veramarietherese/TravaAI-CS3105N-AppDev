@@ -157,7 +157,7 @@ export function createPlaceholderItinerary() {
   ]
 }
 
-export default function TripItinerary({ itinerary, onChange }) {
+export default function TripItinerary({ itinerary, onChange, destination = "" }) {
   const safeItinerary = itinerary?.length ? itinerary : createPlaceholderItinerary()
 
   const [activeDay, setActiveDay] = useState(safeItinerary[0]?.id)
@@ -336,7 +336,7 @@ export default function TripItinerary({ itinerary, onChange }) {
         </div>
 
         <div className="route-mini-map">
-          <TripMap stops={routeStops} />
+          <TripMap stops={routeStops} destination={destination} />
         </div>
 
         <div className="day-tabs">

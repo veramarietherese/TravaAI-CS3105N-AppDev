@@ -176,6 +176,72 @@ function DestinationCards({ cards, onSelect }) {
   );
 }
 
+function ConfirmOverwriteModal({ destination, onConfirm, onCancel }) {
+  return (
+    <div className="trava-modal-overlay" onClick={onCancel}>
+      <div className="trava-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="trava-modal-header">
+          <h2>Replace itinerary?</h2>
+          <p>
+            Would you like TravaAI to generate a new day-by-day itinerary
+            for <strong>{destination}</strong> and replace the current one?
+          </p>
+        </div>
+
+        <div className="trava-modal-actions">
+          <button
+            type="button"
+            className="trava-modal-cancel"
+            onClick={onCancel}
+          >
+            Keep existing
+          </button>
+          <button
+            type="button"
+            className="trava-modal-confirm"
+            onClick={onConfirm}
+          >
+            Yes, replace it ✨
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TripChoiceModal({ destinationName, onCreate, onUpdate, onCancel }) {
+  return (
+    <div className="trava-modal-overlay" onClick={onCancel}>
+      <div className="trava-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="trava-modal-header">
+          <h2>Plan for {destinationName || "Trip"}</h2>
+          <p>Would you like to create a new trip or update your currently active trip?</p>
+        </div>
+
+        <div className="trava-modal-choice-actions">
+          <button type="button" className="btn-create-trip" onClick={onCreate}>
+            ➕ Create New Trip
+          </button>
+
+          <button type="button" className="btn-update-trip" onClick={onUpdate}>
+            ✏️ Update Current Trip
+          </button>
+        </div>
+
+        <div className="trava-modal-actions">
+          <button
+            type="button"
+            className="trava-modal-cancel trava-modal-cancel-full"
+            onClick={onCancel}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PromptConfirmModal({ prompt, onConfirm, onCancel }) {
   const [editedPrompt, setEditedPrompt] = useState(prompt);
 
@@ -240,6 +306,12 @@ export default function AIChatScreen({
   const [modalOpen, setModalOpen] = useState(false);
   const [pendingCard, setPendingCard] = useState(null);
   const [activeTripId, setActiveTripId] = useState(null);
+  const [userBudget, setUserBudget] = useState(null);
+  const [choiceModalOpen, setChoiceModalOpen] = useState(false);
+  const [selectedCard, setSelectedCard] = useState(null);
+  const [isCreateMode, setIsCreateMode] = useState(false);
+  const [overwriteModalOpen, setOverwriteModalOpen] = useState(false);
+  const [pendingItineraryArgs, setPendingItineraryArgs] = useState(null);
 
   const endRef = useRef(null);
   const inputRef = useRef(null);
@@ -247,75 +319,266 @@ export default function AIChatScreen({
   const recognitionRef = useRef(null);
 
   useEffect(() => {
-  async function fetchLatestTrip() {
-    if (!user?.id) return;
+    async function fetchLatestTrip() {
+      if (!user?.id) return;
 
-    // check localStorage first (if they opened a specific trip)
-    const stored = localStorage.getItem("trava-active-trip-id");
-    if (stored) {
-      setActiveTripId(stored);
-      return;
+      const stored = localStorage.getItem("trava-active-trip-id");
+
+      let query = supabase.from("trips").select("trip_id, total_budget");
+
+      if (stored) {
+        query = query.eq("trip_id", stored);
+      } else {
+        query = query
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(1);
+      }
+
+      const { data, error } = await query.single();
+
+      if (error) {
+        console.error("Supabase trip fetch error:", error.message);
+        return;
+      }
+
+      if (data) {
+        setActiveTripId(data.trip_id);
+        if (data.total_budget) {
+          setUserBudget(data.total_budget);
+        }
+      }
     }
 
-    // otherwise fetch their most recently created trip
-    const { data, error } = await supabase
-      .from("trips")
-      .select("trip_id")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .single();
+    fetchLatestTrip();
+  }, [user?.id]);
 
-    if (!error && data) {
-      setActiveTripId(data.trip_id);
-    }
-  }
+function handleSelectCreateTrip() {
+  if (!selectedCard) return;
 
-  fetchLatestTrip();
-}, [user?.id]);
+  setIsCreateMode(true);
+
+  const budget = selectedCard.priceLabel || "a realistic budget";
+  const question = `Give me a practical ${selectedCard.subtitle?.toLowerCase() || "travel"} plan for ${selectedCard.title} with a budget of ${budget}. Include the best areas to stay.`;
+
+  setPendingPrompt(question);
+  setPendingCard(selectedCard);
+  setChoiceModalOpen(false);
+  setModalOpen(true);
+}
+
+function handleSelectUpdateTrip() {
+  if (!selectedCard) return;
+
+  setIsCreateMode(false);
+
+  const budget = selectedCard.priceLabel?.replace("Plan from ", "") || "a realistic budget";
+
+  const budgetInstruction = budget
+    ? `with a budget of ${budget}.`
+    : `and ask me what budget I'm planning for this trip before giving a full cost breakdown.`;
+
+  const question = `Give me a practical ${selectedCard.subtitle?.toLowerCase() || "travel"} plan for ${selectedCard.title} ${budgetInstruction} Include the best areas to stay.`;
+
+  setPendingPrompt(question);
+  setPendingCard(selectedCard);
+  setChoiceModalOpen(false);
+  setModalOpen(true);
+}
 
 async function handleModalConfirm(editedPrompt) {
   setModalOpen(false);
   setPendingPrompt(null);
 
-  const destination = pendingCard?.title || "";
-  const country = pendingCard?.country || "";
+  const rawTitle = pendingCard?.title || "";
+  const budgetMatch = editedPrompt.match(/(?:₱|PHP|P)\s?([\d,.]+k?)/i);
+  const rawBudget = budgetMatch?.[1] || null;
+  const extractedBudget = rawBudget
+    ? rawBudget.toLowerCase().endsWith("k")
+      ? Number(rawBudget.slice(0, -1).replace(/,/g, "")) * 1000
+      : Number(rawBudget.replace(/,/g, ""))
+    : null;
 
-  // const activeTripId = localStorage.getItem("trava-active-trip-id");
-  if (activeTripId && destination) {
-  try {
-    await supabase
-      .from("trips")
-      .update({ destination })
-      .eq("trip_id", activeTripId);
-  } catch (err) {
-    console.error("Failed to update trip destination:", err);
+  const subtitleParts = (pendingCard?.subtitle || "").split("•").map((s) => s.trim());
+  const numberOfDays = parseInt(subtitleParts[0]) || 5;
+
+  const actionText = isCreateMode
+    ? "Creating your new trip"
+    : "Updating your planned trip";
+
+  const statusNoticeText = `${rawTitle} is a great choice! ${actionText} right now! ✈️`;
+
+  let newTripId = null; // ← hoisted here so it's accessible later
+
+  if (isCreateMode && user?.id) {
+    try {
+      const { data, error } = await supabase
+        .from("trips")
+        .insert([
+          {
+            user_id: user.id,
+            destination: rawTitle,
+            number_of_days: numberOfDays,
+            travel_group: "Solo",
+            trip_name: `${rawTitle} Trip`,
+            start_date: null,
+            end_date: null,
+            total_budget: extractedBudget,
+          },
+        ])
+        .select("trip_id")
+        .single();
+
+      if (!error && data) {
+        newTripId = data.trip_id; // ← save to hoisted variable
+        setActiveTripId(data.trip_id);
+        localStorage.setItem("trava-active-trip-id", data.trip_id);
+      } else if (error) {
+        console.error("Supabase insert error:", error.message);
+      }
+    } catch (err) {
+      console.error("Failed to create new trip:", err);
+    }
+  } else if (!isCreateMode && activeTripId && rawTitle) {
+    try {
+      const { error } = await supabase
+        .from("trips")
+        .update({
+          destination: rawTitle,
+          number_of_days: numberOfDays,
+          total_budget: extractedBudget,
+        })
+        .eq("trip_id", activeTripId);
+
+      if (error) {
+        console.error("Supabase update error:", error.message);
+      }
+    } catch (err) {
+      console.error("Failed to update trip destination:", err);
+    }
   }
-}
 
-  setMessages((prev) => [
-    ...prev,
-    {
-      id: createId("user"),
-      role: "user",
-      text: editedPrompt,
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: createId("assistant"),
-      role: "assistant",
-      text: `${destination}${country ? `, ${country}` : ""} is a great choice! Updating your planned trip right now! ✈️`,
-      createdAt: new Date().toISOString(),
-    },
-  ]);
+  const tripIdToUse = isCreateMode ? newTripId : activeTripId; // ← uses newTripId now
+
+  if (tripIdToUse) {
+    const args = {
+      tripId: tripIdToUse,
+      destination: rawTitle,
+      numberOfDays,
+      budget: extractedBudget
+        ? `₱${extractedBudget.toLocaleString()}`
+        : null,
+    };
+
+    if (isCreateMode) {
+      generateAndSaveItinerary(args.tripId, args.destination, args.numberOfDays, args.budget);
+    } else {
+      setPendingItineraryArgs(args);
+      setOverwriteModalOpen(true);
+    }
+  }
 
   setPendingCard(null);
+
+  const noticeMessage = {
+    id: createId("assistant"),
+    role: "assistant",
+    text: statusNoticeText,
+    createdAt: new Date().toISOString(),
+  };
+
+  await sendMessage(editedPrompt, [noticeMessage], true);
+}
+
+async function generateAndSaveItinerary(tripId, destination, numberOfDays, budget) {
+  try {
+    const res = await fetch("/api/itinerary", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ destination, numberOfDays, budget }),
+    });
+
+    const json = await res.json();
+
+    if (!res.ok || !json.itinerary?.length) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: createId("assistant"),
+          role: "assistant",
+          text: "I wasn't able to generate the itinerary right now due to API limits. Your trip destination has been saved — try again in a bit! ✈️",
+          createdAt: new Date().toISOString(),
+        },
+      ]);
+      return;
+    }
+
+    await supabase
+      .from("travel_itineraries")
+      .delete()
+      .eq("trip_id", tripId);
+
+    const rows = json.itinerary.map((day) => ({
+      trip_id: tripId,
+      day_number: day.dayNumber,
+      schedule_details: {
+        ...day,
+        id: `day-${day.dayNumber}`,
+        day: day.dayNumber,
+        date: "",
+        activities: (day.activities || []).map((activity) => ({
+          ...activity,
+          id: `act-${day.dayNumber}-${Math.random().toString(36).slice(2, 7)}`,
+          asset: guessAsset(activity.title),
+          lat: null,
+          lng: null,
+        })),
+      },
+    }));
+
+    const { error } = await supabase
+      .from("travel_itineraries")
+      .insert(rows);
+
+    if (error) console.error("Itinerary save error:", error.message);
+  } catch (err) {
+    console.error("Failed to generate/save itinerary:", err);
+  }
 }
 
 function handleModalCancel() {
   setModalOpen(false);
   setPendingPrompt(null);
   setPendingCard(null);
+}
+
+function handleOverwriteConfirm() {
+  setOverwriteModalOpen(false);
+  if (pendingItineraryArgs) {
+    generateAndSaveItinerary(
+      pendingItineraryArgs.tripId,
+      pendingItineraryArgs.destination,
+      pendingItineraryArgs.numberOfDays,
+      pendingItineraryArgs.budget,
+    );
+  }
+  setPendingItineraryArgs(null);
+}
+
+function handleOverwriteCancel() {
+  setOverwriteModalOpen(false);
+  setPendingItineraryArgs(null);
+}
+function guessAsset(title = "") {
+  const t = title.toLowerCase();
+  if (/flight|airport|terminal/.test(t)) return "plane";
+  if (/hotel|check.in|resort/.test(t)) return "hotel";
+  if (/food|restaurant|dinner|lunch|breakfast|cafe|coffee/.test(t)) return "ramen";
+  if (/temple|shrine|museum|castle/.test(t)) return "temple";
+  if (/train|metro|subway/.test(t)) return "train";
+  if (/shop|mall|market/.test(t)) return "shopping";
+  if (/tower|landmark|view|monument|bridge|park|garden|square|plaza|visit|explore|tour|walk|stroll|old town|historic/.test(t)) return "tower";
+  return "plane";
 }
 
   const welcomeMessage = useMemo(
@@ -377,130 +640,134 @@ function handleModalCancel() {
     setNotice("Generation stopped.");
   }
 
-function handleDestinationCard(card) {
-  const question = `Give me a practical ${card.subtitle.toLowerCase()} plan for ${card.title}. Include a realistic Philippine-peso budget and the best areas to stay. Skip any introductory greeting — go straight into the plan.`;
-  setPendingPrompt(question);
-  setPendingCard(card);
-  setModalOpen(true);
+  function handleDestinationCard(card) {
+  setSelectedCard(card);
+  setChoiceModalOpen(true);
 }
 
-  async function sendMessage(rawMessage = input) {
-    const messageText = String(rawMessage || "").trim();
+async function sendMessage(rawMessage = input, extraMessages = [], skipApi = false) {
+  const messageText = String(rawMessage || "").trim();
 
-    if (!messageText || loading) return;
+  if (!messageText || (loading && !skipApi)) return;
 
-    const userMessage = {
-      id: createId("user"),
-      role: "user",
-      text: messageText,
+  const userMessage = {
+    id: createId("user"),
+    role: "user",
+    text: messageText,
+    createdAt: new Date().toISOString(),
+  };
+
+  const nextMessages = [...messages, userMessage, ...extraMessages];
+
+  setMessages(nextMessages);
+  setInput("");
+  setNotice("");
+  setMenuOpen(false);
+
+  // If skipApi is true, return early without calling the backend
+  if (skipApi) {
+    return;
+  }
+
+  setLoading(true);
+
+  const controller = new AbortController();
+  abortRef.current = controller;
+
+  const timeout = window.setTimeout(() => {
+    controller.abort();
+  }, 35000);
+
+  try {
+    const history = nextMessages
+      .slice(-8)
+      .map(({ role, text }) => ({
+        role,
+        text: String(text).slice(0, 1200),
+      }));
+
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      signal: controller.signal,
+      body: JSON.stringify({
+        message: messageText,
+        history,
+        user: {
+          id: user?.id || null,
+          name: userName,
+        },
+        tripContext,
+        locale: "en-PH",
+        currency: "PHP",
+      }),
+    });
+
+    const payload = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      throw new Error(
+        payload?.error ||
+          "TRAVA AI could not answer right now.",
+      );
+    }
+
+    const assistantMessage = {
+      id: createId("assistant"),
+      role: "assistant",
+      text:
+        payload?.reply ||
+        "I’m ready to help with your trip. What destination are you considering?",
       createdAt: new Date().toISOString(),
+      source: payload?.source || "gemini",
     };
 
-    const nextMessages = [...messages, userMessage];
+    setMessages((current) => [
+      ...current,
+      assistantMessage,
+    ]);
 
-    setMessages(nextMessages);
-    setInput("");
-    setNotice("");
-    setMenuOpen(false);
-    setLoading(true);
+    if (Array.isArray(payload?.cards)) {
+      setRecommendationCards(payload.cards);
+    }
 
-    const controller = new AbortController();
-    abortRef.current = controller;
+    if (Array.isArray(payload?.quickReplies)) {
+      setQuickPrompts(payload.quickReplies.slice(0, 4));
+    }
 
-    const timeout = window.setTimeout(() => {
-      controller.abort();
-    }, 35000);
-
-    try {
-      const history = nextMessages
-        .slice(-8)
-        .map(({ role, text }) => ({
-          role,
-          text: String(text).slice(0, 1200),
-        }));
-
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        signal: controller.signal,
-        body: JSON.stringify({
-          message: messageText,
-          history,
-          user: {
-            id: user?.id || null,
-            name: userName,
-          },
-          tripContext,
-          locale: "en-PH",
-          currency: "PHP",
-        }),
-      });
-
-      const payload = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        throw new Error(
-          payload?.error ||
-            "TRAVA AI could not answer right now.",
-        );
-      }
-
-      const assistantMessage = {
-        id: createId("assistant"),
-        role: "assistant",
-        text:
-          payload?.reply ||
-          "I’m ready to help with your trip. What destination are you considering?",
-        createdAt: new Date().toISOString(),
-        source: payload?.source || "gemini",
-      };
-
+    if (payload?.source === "fallback") {
+      setNotice(
+        "Gemini is temporarily busy, so TRAVA used a lightweight travel fallback.",
+      );
+    }
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      setNotice(
+        "The request took too long or was stopped. Please send it again.",
+      );
+    } else {
       setMessages((current) => [
         ...current,
-        assistantMessage,
+        {
+          id: createId("assistant-error"),
+          role: "assistant",
+          text:
+            "I couldn’t reach the travel assistant just now. Please try again in a moment.",
+          createdAt: new Date().toISOString(),
+          error: true,
+        },
       ]);
 
-      if (Array.isArray(payload?.cards)) {
-        setRecommendationCards(payload.cards);
-      }
-
-      if (Array.isArray(payload?.quickReplies)) {
-        setQuickPrompts(payload.quickReplies.slice(0, 4));
-      }
-
-      if (payload?.source === "fallback") {
-        setNotice(
-          "Gemini is temporarily busy, so TRAVA used a lightweight travel fallback.",
-        );
-      }
-    } catch (error) {
-      if (error?.name === "AbortError") {
-        setNotice(
-          "The request took too long or was stopped. Please send it again.",
-        );
-      } else {
-        setMessages((current) => [
-          ...current,
-          {
-            id: createId("assistant-error"),
-            role: "assistant",
-            text:
-              "I couldn’t reach the travel assistant just now. Please try again in a moment.",
-            createdAt: new Date().toISOString(),
-            error: true,
-          },
-        ]);
-
-        setNotice(error?.message || "Something went wrong.");
-      }
-    } finally {
-      window.clearTimeout(timeout);
-      abortRef.current = null;
-      setLoading(false);
+      setNotice(error?.message || "Something went wrong.");
     }
+  } finally {
+    window.clearTimeout(timeout);
+    abortRef.current = null;
+    setLoading(false);
   }
+}
 
   function handleSubmit(event) {
     event.preventDefault();
@@ -747,13 +1014,32 @@ function handleDestinationCard(card) {
           or the travel agency.
         </p>
       </div>
+      
+      {/* Choice Modal */}
+      {choiceModalOpen && selectedCard && (
+        <TripChoiceModal
+          destinationName={selectedCard.title}
+          onCreate={handleSelectCreateTrip}
+          onUpdate={handleSelectUpdateTrip}
+          onCancel={() => setChoiceModalOpen(false)}
+        />
+      )}
+
       {modalOpen && pendingPrompt && (
-  <PromptConfirmModal
-    prompt={pendingPrompt}
-    onConfirm={handleModalConfirm}
-    onCancel={handleModalCancel}
-  />
-)}
+        <PromptConfirmModal
+          prompt={pendingPrompt}
+          onConfirm={handleModalConfirm}
+          onCancel={handleModalCancel}
+        />
+      )}
+      
+      {overwriteModalOpen && pendingItineraryArgs && (
+        <ConfirmOverwriteModal
+          destination={pendingItineraryArgs.destination}
+          onConfirm={handleOverwriteConfirm}
+          onCancel={handleOverwriteCancel}
+        />
+      )}
     </section>
   );
 }

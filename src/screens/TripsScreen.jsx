@@ -1408,6 +1408,7 @@ export default function TripsScreen() {
           <TripItinerary
             itinerary={itinerary}
             onChange={handleItineraryChange}
+            destination={selectedTrip?.destination || ""}
           />
         </div>
       )}
