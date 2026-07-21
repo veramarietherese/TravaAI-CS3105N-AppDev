@@ -222,8 +222,7 @@ export default function ChatroomsList({ onSelectRoom }) {
   return (
     <div className="list-container">
       <header className="list-header">
-        <h1>Messages</h1>
-        <div className="search-bar-container">
+          <div className="search-bar-container">
           <input
             type="text"
             className="room-search-input"
