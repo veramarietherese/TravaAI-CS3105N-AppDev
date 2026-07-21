@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ArrowLeft,
   CalendarDays,
@@ -11,80 +11,34 @@ import {
   Briefcase,
   Users,
   Compass,
+  Copy,
+  ExternalLink,
   Send,
   Compass as StyleIcon,
-  Image as ImageIcon,
-  Bot,
-  CopyCheck,
 } from "lucide-react";
 import "./agency-dashboard.css";
+import { supabase } from "../auth/supabaseClient.js";
+import { useAuth } from "../auth/AuthContext.jsx";
+import { createTripFromAgencyPackage } from "../services/tripService.js";
 
-const initialPackages = [
-  {
-    id: 1,
-    title: "Bali Wellness Escape",
-    description:
-      "Rejuvenate your soul with deep tissue massages, organic culinary classes, and stunning sunrise terrace meditations in the heart of Ubud.",
-    price: "28900",
-    currency_code: "PHP",
-    duration_days: "5",
-    duration_nights: "4",
-    target_travel_style: "Wellness, Relaxation",
-    image_url: "https://images.unsplash.com/photo-1537996194471-e657df975ab4",
-    destination: "Ubud, Bali",
-    country: "Indonesia",
-    category: "Culture",
-  },
-  {
-    id: 2,
-    title: "Palawan Island Loop",
-    description:
-      "Dive deep into world-renowned shipwrecks, limestone lagoons, and pristine sand bars around beautiful Coron.",
-    price: "24700",
-    currency_code: "PHP",
-    duration_days: "7",
-    duration_nights: "6",
-    target_travel_style: "Backpacker, Adventure",
-    image_url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e",
-    destination: "Coron, Palawan",
-    country: "Philippines",
-    category: "Beach",
-  },
-];
+const TRAVEL_STYLE_OPTIONS = ["Standard", "Premium", "Budget"];
 
-const initialTrips = [
-  {
-    id: "trip-101",
-    title: "Cebu Heritage Tour Group",
-    destination: "Cebu City",
-    startDate: "Aug 12, 2026",
-    travelersCount: 8,
-    status: "Active",
-  },
-];
+export default function AgencyDashboardScreen({
+  onBack,
+  onNavigateToChat,
+  onOpenTripWorkspace,
+}) {
+  const { user } = useAuth();
 
-// Sample AI Assistant Conversation
-const initialChatMessages = [
-  {
-    sender: "ai",
-    text: "Hello! I am your TRAVA Agency AI Strategist. Ask me to generate tour packages based on target locations, budgets, or travel trends, and I can generate full package specifications for your catalog!",
-  },
-];
+  const [activeTab, setActiveTab] = useState("packages"); // "packages" | "rosters"
+  const [agencyId, setAgencyId] = useState(null);
+  const [packages, setPackages] = useState([]);
+  const [hostedTrips, setHostedTrips] = useState([]);
+  const [editingId, setEditingId] = useState(null); // stores package_id when editing
+  const [isLoading, setIsLoading] = useState(false);
+  const [feedback, setFeedback] = useState("Loading agency profile...");
 
-export default function AgencyDashboardScreen({ onBack, onLogout }) {
-  const [activeTab, setActiveTab] = useState("packages");
-  const [packages, setPackages] = useState(initialPackages);
-  const [editingId, setEditingId] = useState(null);
-  const [feedback, setFeedback] = useState(
-    "Ready to manage your multi-field specifications.",
-  );
-
-  // AI Assistant State
-  const [chatMessages, setChatMessages] = useState(initialChatMessages);
-  const [aiInput, setAiInput] = useState("");
-  const [isAiGenerating, setIsAiGenerating] = useState(false);
-
-  // Structural Form State
+  // Package Form State
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -92,25 +46,102 @@ export default function AgencyDashboardScreen({ onBack, onLogout }) {
     currency_code: "PHP",
     duration_days: "",
     duration_nights: "",
-    target_travel_style: "",
+    target_travel_style: "Standard",
     image_url: "",
     destination: "",
-    country: "",
+    country: "Philippines",
     category: "Beach",
   });
 
-  const [trips, setTrips] = useState(initialTrips);
-  const [inviteForm, setInviteForm] = useState({ tripId: "", travelerId: "" });
-  const [tripFeedback, setTripFeedback] = useState(
-    "Select a trip above to invite custom travelers.",
-  );
-
+  // Calculate Metrics
   const totalPackages = packages.length;
-  const activeTripsCount = trips.length;
-  const totalCustomers = trips.reduce(
-    (sum, trip) => sum + trip.travelersCount,
+  const totalHostedTrips = hostedTrips.length;
+  const totalTravelersJoined = hostedTrips.reduce(
+    (sum, trip) => sum + (trip.trip_members?.length || 0),
     0,
   );
+
+  // --- INITIAL LOAD: FETCH AGENCY & RELATED DATA ---
+  useEffect(() => {
+    if (user?.id) {
+      initDashboard();
+    } else {
+      setFeedback("Error: No authenticated agency user context.");
+    }
+  }, [user]);
+
+  async function initDashboard() {
+    setIsLoading(true);
+
+    try {
+      // 1. Fetch agency profile
+      const { data: agencyData, error: agencyError } = await supabase
+        .from("travel_agencies")
+        .select("agency_id")
+        .eq("owner_user_id", user.id)
+        .single();
+
+      if (agencyError || !agencyData) {
+        setFeedback(
+          `Unable to verify agency ownership: ${
+            agencyError?.message || "No agency record found."
+          }`,
+        );
+        setIsLoading(false);
+        return;
+      }
+
+      setAgencyId(agencyData.agency_id);
+
+      // 2. Fetch Packages published by this Agency
+      const { data: packageData, error: packageError } = await supabase
+        .from("tour_packages")
+        .select("*")
+        .eq("agency_id", agencyData.agency_id)
+        .order("package_id", { ascending: false });
+
+      if (packageError) throw packageError;
+      setPackages(packageData || []);
+
+      // 3. Fetch Trips hosted by this Agency
+      const { data: tripsData, error: tripsError } = await supabase
+        .from("trips")
+        .select(
+          `
+          trip_id,
+          trip_name,
+          destination,
+          start_date,
+          end_date,
+          package_id,
+          status,
+          trip_members (
+            user_id,
+            status,
+            profiles ( full_name, email )
+          )
+        `,
+        )
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (tripsError) {
+        console.warn(
+          "Could not load hosted trips relation:",
+          tripsError.message,
+        );
+      } else {
+        setHostedTrips(tripsData || []);
+      }
+
+      setFeedback("Agency workspace loaded successfully.");
+    } catch (err) {
+      console.error("Dashboard init error:", err);
+      setFeedback(`Error loading dashboard: ${err.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   function resetForm() {
     setEditingId(null);
@@ -121,33 +152,37 @@ export default function AgencyDashboardScreen({ onBack, onLogout }) {
       currency_code: "PHP",
       duration_days: "",
       duration_nights: "",
-      target_travel_style: "",
+      target_travel_style: "Standard",
       image_url: "",
       destination: "",
-      country: "",
+      country: "Philippines",
       category: "Beach",
     });
   }
 
-  function handleSubmit(event) {
+  // --- SAVE / UPDATE TOUR PACKAGE ---
+  async function handleSubmitPackage(event) {
     event.preventDefault();
 
-    if (!form.title.trim() || !form.destination.trim() || !form.price) {
-      setFeedback(
-        "Please add title, destination, and pricing fields before saving.",
-      );
+    if (!agencyId) {
+      setFeedback("Cannot save: Missing valid agency account context.");
       return;
     }
 
-    const packageData = {
-      id: editingId ?? Date.now(),
+    if (!form.title.trim() || !form.destination.trim() || !form.price) {
+      setFeedback("Please add title, destination, and pricing before saving.");
+      return;
+    }
+
+    const payload = {
+      agency_id: agencyId,
       title: form.title.trim(),
       description: form.description.trim(),
-      price: form.price.trim(),
+      price: parseFloat(form.price) || 0,
       currency_code: form.currency_code,
-      duration_days: form.duration_days.trim() || "1",
-      duration_nights: form.duration_nights.trim() || "0",
-      target_travel_style: form.target_travel_style.trim() || "Standard",
+      duration_days: parseInt(form.duration_days, 10) || 1,
+      duration_nights: parseInt(form.duration_nights, 10) || 0,
+      target_travel_style: form.target_travel_style,
       image_url:
         form.image_url.trim() ||
         "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
@@ -156,160 +191,183 @@ export default function AgencyDashboardScreen({ onBack, onLogout }) {
       category: form.category,
     };
 
-    if (editingId) {
-      setPackages((current) =>
-        current.map((item) => (item.id === editingId ? packageData : item)),
-      );
-      setFeedback("Package structure updated completely.");
-    } else {
-      setPackages((current) => [packageData, ...current]);
-      setFeedback("New structured catalog package posted live.");
+    setIsLoading(true);
+
+    try {
+      if (editingId) {
+        // UPDATE Existing Package
+        const { data, error } = await supabase
+          .from("tour_packages")
+          .update(payload)
+          .eq("package_id", editingId)
+          .select();
+
+        if (error) throw error;
+
+        setPackages((prev) =>
+          prev.map((item) => (item.package_id === editingId ? data[0] : item)),
+        );
+
+        setFeedback("Package spec updated successfully.");
+        resetForm();
+      } else {
+        // INSERT New Package
+        const { data: pkgData, error: pkgError } = await supabase
+          .from("tour_packages")
+          .insert([payload])
+          .select()
+          .single();
+
+        if (pkgError) throw pkgError;
+
+        setPackages((prev) => [pkgData, ...prev]);
+        setFeedback("New package published to catalog!");
+        resetForm();
+      }
+    } catch (err) {
+      console.error("Submit error:", err);
+      setFeedback(`Failed to save package: ${err.message}`);
+    } finally {
+      setIsLoading(false);
     }
-
-    resetForm();
   }
 
-  function handleEdit(packageItem) {
-    setEditingId(packageItem.id);
-    setForm({
-      title: packageItem.title,
-      description: packageItem.description,
-      price: packageItem.price,
-      currency_code: packageItem.currency_code,
-      duration_days: packageItem.duration_days,
-      duration_nights: packageItem.duration_nights,
-      target_travel_style: packageItem.target_travel_style,
-      image_url: packageItem.image_url,
-      destination: packageItem.destination,
-      country: packageItem.country,
-      category: packageItem.category,
-    });
-    setFeedback(`Modifying entry fields for ${packageItem.title}.`);
-  }
-
-  function handleDelete(id) {
-    setPackages((current) => current.filter((item) => item.id !== id));
-    if (editingId === id) resetForm();
-    setFeedback("Package removed.");
-  }
-
-  // Pre-fill the Form from an AI Recommendation
-  function applyAiPackageToForm(pkg) {
-    setForm({ ...pkg });
-    setActiveTab("packages");
+  // --- MANUAL ACTION: CONVERT PACKAGE TO TRIP WORKSPACE WITH AUTO-BUDGET ---
+  async function handleCreateTripFromPackage(pkg) {
+    setIsLoading(true);
     setFeedback(
-      `AI recommendation "${pkg.title}" imported! Review and click save.`,
+      `Creating trip workspace with auto-budget for "${pkg.title}"...`,
     );
+
+    try {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const newTrip = await createTripFromAgencyPackage(pkg, user, todayStr);
+
+      setHostedTrips((prev) => [newTrip, ...prev]);
+      setFeedback("Trip workspace created with pre-filled budget!");
+
+      if (onOpenTripWorkspace) {
+        onOpenTripWorkspace(newTrip.trip_id);
+      }
+    } catch (err) {
+      console.error("Create trip error:", err);
+      setFeedback(`Failed to create trip workspace: ${err.message}`);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
-  // AI Assistant Query Handler
-  function handleSendAiQuery(e) {
-    e.preventDefault();
-    if (!aiInput.trim()) return;
+  function handleEditPackage(item) {
+    setEditingId(item.package_id);
+    setForm({
+      title: item.title || "",
+      description: item.description || "",
+      price: item.price ? String(item.price) : "",
+      currency_code: item.currency_code || "PHP",
+      duration_days: item.duration_days ? String(item.duration_days) : "",
+      duration_nights: item.duration_nights ? String(item.duration_nights) : "",
+      target_travel_style: item.target_travel_style || "Standard",
+      image_url: item.image_url || "",
+      destination: item.destination || "",
+      country: item.country || "Philippines",
+      category: item.category || "Beach",
+    });
+    setFeedback(`Modifying specs for "${item.title}".`);
+  }
 
-    const userMsg = aiInput;
-    setChatMessages((prev) => [...prev, { sender: "user", text: userMsg }]);
-    setAiInput("");
-    setIsAiGenerating(true);
+  // --- DELETE PACKAGE ---
+  async function handleDeletePackage(packageId) {
+    const confirmed = window.confirm(
+      "Delete this package from the marketplace?",
+    );
+    if (!confirmed) return;
 
-    // Simulated AI response generation
-    setTimeout(() => {
-      const generatedSpec = {
-        title: "Bohol Eco-Adventure & Tarsier Safari",
-        description:
-          "Explore the Chocolate Hills, cruise down the Loboc River with a buffet lunch, and meet wild tarsiers in their natural sanctuary.",
-        price: "18500",
-        currency_code: "PHP",
-        duration_days: "4",
-        duration_nights: "3",
-        target_travel_style: "Eco-Tourist, Family",
-        image_url:
-          "https://images.unsplash.com/photo-1518509562904-e7ef99cdcc86",
-        destination: "Panglao & Carmen, Bohol",
-        country: "Philippines",
-        category: "Adventure",
-      };
+    const { error } = await supabase
+      .from("tour_packages")
+      .delete()
+      .eq("package_id", packageId);
 
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          sender: "ai",
-          text: `Based on your request for "${userMsg}", here is a high-converting tour package recommendation tailored for your agency:`,
-          recommendation: generatedSpec,
-        },
-      ]);
-      setIsAiGenerating(false);
-    }, 1000);
+    if (error) {
+      setFeedback(`Failed to delete: ${error.message}`);
+    } else {
+      setPackages((prev) =>
+        prev.filter((item) => item.package_id !== packageId),
+      );
+      if (editingId === packageId) resetForm();
+      setFeedback("Package removed from marketplace.");
+    }
+  }
+
+  function handleCopyInviteLink(tripId) {
+    const link = `${window.location.origin}/join/${tripId}`;
+    navigator.clipboard.writeText(link);
+    setFeedback(`Invite link copied to clipboard: ${link}`);
   }
 
   return (
     <div className="scroll-area agency-dashboard-screen">
+      {/* Header */}
       <header className="agency-dashboard-header">
         <button className="agency-back-btn" type="button" onClick={onBack}>
           <ArrowLeft size={20} />
         </button>
         <div>
-          <p className="agency-eyebrow">Organization account</p>
+          <p className="agency-eyebrow">Organization Account</p>
           <h1>Agency Command Center</h1>
         </div>
       </header>
 
+      {/* KPI Overview */}
       <section className="agency-hero-card">
         <div>
-          <p className="agency-eyebrow">Operations overview</p>
-          <h2>Workspace performance and client engagement trackers.</h2>
+          <p className="agency-eyebrow">Operations Overview</p>
+          <h2>Marketplace performance and customer engagement stats.</h2>
         </div>
         <div className="agency-hero-stats">
           <article>
-            <Compass size={22} className="stat-icon-color" />
-            <strong>{activeTripsCount}</strong>
-            <span>Active Trips</span>
-          </article>
-          <article>
             <Briefcase size={22} className="stat-icon-color" />
             <strong>{totalPackages}</strong>
-            <span>Tour Packages</span>
+            <span>Published Packages</span>
+          </article>
+          <article>
+            <Compass size={22} className="stat-icon-color" />
+            <strong>{totalHostedTrips}</strong>
+            <span>Hosted Group Trips</span>
           </article>
           <article>
             <Users size={22} className="stat-icon-color" />
-            <strong>{totalCustomers}</strong>
-            <span>Customers Joined</span>
+            <strong>{totalTravelersJoined}</strong>
+            <span>Travelers Joined</span>
           </article>
         </div>
       </section>
 
-      {/* Navigation Tabs */}
+      {/* Tab Controls */}
       <div className="agency-tab-bar">
         <button
           className={activeTab === "packages" ? "tab-btn active" : "tab-btn"}
           onClick={() => setActiveTab("packages")}
         >
-          Tour Packages Manager
+          Tour Packages Catalog
         </button>
         <button
-          className={
-            activeTab === "ai_assistant" ? "tab-btn active" : "tab-btn"
-          }
-          onClick={() => setActiveTab("ai_assistant")}
+          className={activeTab === "rosters" ? "tab-btn active" : "tab-btn"}
+          onClick={() => setActiveTab("rosters")}
         >
-          <Sparkles size={15} style={{ marginRight: 4, display: "inline" }} />
-          AI Ideas & Specs
-        </button>
-        <button
-          className={activeTab === "trips" ? "tab-btn active" : "tab-btn"}
-          onClick={() => setActiveTab("trips")}
-        >
-          Trip Invites
+          Hosted Group Rosters ({totalHostedTrips})
         </button>
       </div>
 
-      {/* TAB 1: TOUR PACKAGES MANAGER */}
+      {/* =========================================================
+          TAB 1: TOUR PACKAGES CATALOG
+      ========================================================= */}
       {activeTab === "packages" && (
         <>
+          {/* Form Panel */}
           <section className="agency-panel">
             <div className="agency-panel-header">
               <div>
-                <p className="agency-eyebrow">Package editor</p>
+                <p className="agency-eyebrow">Package Editor</p>
                 <h3>
                   {editingId
                     ? "Edit Existing Spec Matrix"
@@ -327,13 +385,13 @@ export default function AgencyDashboardScreen({ onBack, onLogout }) {
               )}
             </div>
 
-            <form className="agency-form" onSubmit={handleSubmit}>
+            <form className="agency-form" onSubmit={handleSubmitPackage}>
               <label>
                 <span>Package Title</span>
                 <input
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  placeholder="e.g. Cebu Island Explorer"
+                  placeholder="e.g. Cebu Island Explorer & Whale Shark Safari"
                   required
                 />
               </label>
@@ -345,7 +403,7 @@ export default function AgencyDashboardScreen({ onBack, onLogout }) {
                   onChange={(e) =>
                     setForm({ ...form, description: e.target.value })
                   }
-                  placeholder="Provide an engaging story/itinerary description..."
+                  placeholder="Provide an engaging story/itinerary overview..."
                   rows={3}
                 />
               </label>
@@ -384,7 +442,7 @@ export default function AgencyDashboardScreen({ onBack, onLogout }) {
                     onChange={(e) =>
                       setForm({ ...form, duration_days: e.target.value })
                     }
-                    placeholder="e.g. 5"
+                    placeholder="e.g. 4"
                   />
                 </label>
 
@@ -396,7 +454,7 @@ export default function AgencyDashboardScreen({ onBack, onLogout }) {
                     onChange={(e) =>
                       setForm({ ...form, duration_nights: e.target.value })
                     }
-                    placeholder="e.g. 4"
+                    placeholder="e.g. 3"
                   />
                 </label>
               </div>
@@ -410,7 +468,7 @@ export default function AgencyDashboardScreen({ onBack, onLogout }) {
                     onChange={(e) =>
                       setForm({ ...form, price: e.target.value })
                     }
-                    placeholder="e.g. 24000"
+                    placeholder="e.g. 18500"
                     required
                   />
                 </label>
@@ -450,19 +508,25 @@ export default function AgencyDashboardScreen({ onBack, onLogout }) {
 
                 <label>
                   <span>Target Travel Style</span>
-                  <input
+                  <select
                     value={form.target_travel_style}
                     onChange={(e) =>
                       setForm({ ...form, target_travel_style: e.target.value })
                     }
-                    placeholder="e.g. Luxury, Backpacker, Couples"
-                  />
+                  >
+                    {TRAVEL_STYLE_OPTIONS.map((style) => (
+                      <option key={style} value={style}>
+                        {style}
+                      </option>
+                    ))}
+                  </select>
                 </label>
               </div>
 
               <button
                 className="agency-primary-btn agency-submit"
                 type="submit"
+                disabled={isLoading}
               >
                 <Plus size={16} />
                 {editingId ? "Save Spec Updates" : "Publish Dynamic Package"}
@@ -471,6 +535,7 @@ export default function AgencyDashboardScreen({ onBack, onLogout }) {
             <p className="agency-feedback">{feedback}</p>
           </section>
 
+          {/* Active Postings List */}
           <section className="agency-package-list">
             <div className="agency-panel-header">
               <div>
@@ -480,7 +545,7 @@ export default function AgencyDashboardScreen({ onBack, onLogout }) {
             </div>
 
             {packages.map((item) => (
-              <article className="agency-package-card" key={item.id}>
+              <article className="agency-package-card" key={item.package_id}>
                 <div className="agency-package-main">
                   <div className="agency-package-heading">
                     <h4>{item.title}</h4>
@@ -507,19 +572,26 @@ export default function AgencyDashboardScreen({ onBack, onLogout }) {
                     <span>
                       <StyleIcon size={12} /> Style: {item.target_travel_style}
                     </span>
-                    {item.image_url && (
-                      <span>
-                        <ImageIcon size={12} /> Image Linked
-                      </span>
-                    )}
                   </div>
                 </div>
 
+                {/* Package Card Actions (Create Trip Workspace, Edit, Delete) */}
                 <div className="agency-package-actions">
-                  <button type="button" onClick={() => handleEdit(item)}>
+                  <button
+                    type="button"
+                    className="agency-primary-btn"
+                    onClick={() => handleCreateTripFromPackage(item)}
+                    disabled={isLoading}
+                  >
+                    <Compass size={16} /> Create Trip
+                  </button>
+                  <button type="button" onClick={() => handleEditPackage(item)}>
                     <PencilLine size={16} /> Edit
                   </button>
-                  <button type="button" onClick={() => handleDelete(item.id)}>
+                  <button
+                    type="button"
+                    onClick={() => handleDeletePackage(item.package_id)}
+                  >
                     <Trash2 size={16} /> Delete
                   </button>
                 </div>
@@ -529,154 +601,91 @@ export default function AgencyDashboardScreen({ onBack, onLogout }) {
         </>
       )}
 
-      {/* TAB 2: AI PACKAGE STRATEGIST & RECOMMENDATIONS */}
-      {activeTab === "ai_assistant" && (
-        <section className="agency-panel agency-ai-section">
-          <div className="agency-panel-header">
-            <div>
-              <p className="agency-eyebrow">Smart Catalog Creator</p>
-              <h3>AI Tour Package Assistant</h3>
-            </div>
-            <span className="agency-badge">
-              <Sparkles size={14} /> Dynamic Recommendations
-            </span>
-          </div>
-
-          <div className="agency-chat-box">
-            {chatMessages.map((msg, index) => (
-              <div
-                key={index}
-                className={`agency-chat-message ${msg.sender === "user" ? "user-msg" : "ai-msg"}`}
-              >
-                <div className="msg-header">
-                  {msg.sender === "ai" ? (
-                    <Bot size={16} />
-                  ) : (
-                    <Users size={16} />
-                  )}
-                  <span>
-                    {msg.sender === "ai" ? "TRAVA AI" : "Agency Agent"}
-                  </span>
-                </div>
-
-                <p>{msg.text}</p>
-
-                {/* If AI generates a structured package recommendation */}
-                {msg.recommendation && (
-                  <div className="ai-recommendation-card">
-                    <div className="rec-header">
-                      <h4>{msg.recommendation.title}</h4>
-                      <span className="rec-price">
-                        {msg.recommendation.currency_code}{" "}
-                        {Number(msg.recommendation.price).toLocaleString()}
-                      </span>
-                    </div>
-
-                    <p className="rec-desc">{msg.recommendation.description}</p>
-
-                    <div className="rec-grid">
-                      <span>
-                        <strong>Location:</strong>{" "}
-                        {msg.recommendation.destination},{" "}
-                        {msg.recommendation.country}
-                      </span>
-                      <span>
-                        <strong>Duration:</strong>{" "}
-                        {msg.recommendation.duration_days}D /{" "}
-                        {msg.recommendation.duration_nights}N
-                      </span>
-                      <span>
-                        <strong>Category:</strong> {msg.recommendation.category}
-                      </span>
-                      <span>
-                        <strong>Style:</strong>{" "}
-                        {msg.recommendation.target_travel_style}
-                      </span>
-                    </div>
-
-                    <button
-                      type="button"
-                      className="agency-primary-btn use-spec-btn"
-                      onClick={() => applyAiPackageToForm(msg.recommendation)}
-                    >
-                      <CopyCheck size={16} /> Use Spec in Form
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {isAiGenerating && (
-              <div className="agency-chat-message ai-msg">
-                <p className="ai-typing">
-                  TRAVA AI is brainstorming package specs...
-                </p>
-              </div>
-            )}
-          </div>
-
-          <form className="agency-ai-input-form" onSubmit={handleSendAiQuery}>
-            <input
-              type="text"
-              value={aiInput}
-              onChange={(e) => setAiInput(e.target.value)}
-              placeholder="Ask for ideas (e.g. 'Give me a 3-day budget island hopping package for Siargao')"
-            />
-            <button
-              type="submit"
-              className="agency-primary-btn"
-              disabled={isAiGenerating}
-            >
-              <Send size={16} />
-            </button>
-          </form>
-        </section>
-      )}
-
-      {/* TAB 3: TRIP OPERATIONS & INVITES */}
-      {activeTab === "trips" && (
+      {/* =========================================================
+          TAB 2: HOSTED GROUP ROSTERS & CUSTOMERS
+      ========================================================= */}
+      {activeTab === "rosters" && (
         <section className="agency-panel">
           <div className="agency-panel-header">
             <div>
-              <p className="agency-eyebrow">Invite ecosystem</p>
-              <h3>Invite a Traveler to a Trip</h3>
+              <p className="agency-eyebrow">Customer Headcount Tracker</p>
+              <h3>Active Hosted Group Trips</h3>
             </div>
           </div>
-          <form className="agency-form" onSubmit={(e) => e.preventDefault()}>
-            <label>
-              <span>Select Target Custom Trip</span>
-              <select
-                value={inviteForm.tripId}
-                onChange={(e) =>
-                  setInviteForm({ ...inviteForm, tripId: e.target.value })
-                }
-                required
-              >
-                <option value="">-- Choose an active package trip --</option>
-                {trips.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.title} ({t.destination})
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span>Traveler Account ID</span>
-              <input
-                type="text"
-                value={inviteForm.travelerId}
-                onChange={(e) =>
-                  setInviteForm({ ...inviteForm, travelerId: e.target.value })
-                }
-                placeholder="Paste Traveler's profile user_id here"
-                required
-              />
-            </label>
-            <button className="agency-primary-btn agency-submit" type="submit">
-              <Send size={16} /> Dispatch Trip Invitation
-            </button>
-          </form>
-          <p className="agency-feedback">{tripFeedback}</p>
+
+          {hostedTrips.length === 0 ? (
+            <p className="agency-empty-state">
+              No active trip workspaces created yet. Go to the{" "}
+              <strong>Tour Packages Catalog</strong> and click{" "}
+              <strong>"Create Trip Workspace"</strong> on a package to launch
+              one!
+            </p>
+          ) : (
+            <div className="roster-list-container">
+              {hostedTrips.map((trip) => {
+                const joinedMembers = trip.trip_members || [];
+
+                return (
+                  <article className="agency-roster-card" key={trip.trip_id}>
+                    <div className="roster-card-header">
+                      <div>
+                        <h4>{trip.trip_name}</h4>
+                        <span className="roster-destination-tag">
+                          <MapPin size={12} /> {trip.destination}
+                        </span>
+                      </div>
+                      <span className="roster-count-badge">
+                        <Users size={14} /> {joinedMembers.length} Traveler(s)
+                        Joined
+                      </span>
+                    </div>
+
+                    <div className="roster-members-list">
+                      <p className="roster-subtitle">Confirmed Roster:</p>
+                      {joinedMembers.length === 0 ? (
+                        <p className="roster-no-members">
+                          No travelers joined yet. Share the invite link in chat
+                          to build your roster!
+                        </p>
+                      ) : (
+                        <ul>
+                          {joinedMembers.map((member, i) => (
+                            <li key={i} className="roster-member-item">
+                              <span>
+                                {member.profiles?.full_name ||
+                                  member.profiles?.email ||
+                                  member.user_id}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+
+                    <div className="roster-card-actions">
+                      <button
+                        type="button"
+                        className="agency-secondary-btn"
+                        onClick={() => handleCopyInviteLink(trip.trip_id)}
+                      >
+                        <Copy size={14} /> Copy Invite Link
+                      </button>
+
+                      {onOpenTripWorkspace && (
+                        <button
+                          type="button"
+                          className="agency-primary-btn"
+                          onClick={() => onOpenTripWorkspace(trip.trip_id)}
+                        >
+                          <ExternalLink size={14} /> Open Trip Workspace
+                        </button>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
         </section>
       )}
     </div>

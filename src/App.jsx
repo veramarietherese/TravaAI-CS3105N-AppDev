@@ -45,10 +45,14 @@ export default function App() {
   const isAgency = user?.user_metadata?.role === "Agency";
   console.log("isAgency: ", isAgency);
   console.log(isAgency ? "Agency" : "Traveler");
-  //2. Set the initial landing screen based on their role
+
+  // 2. Set initial landing screen based on role
   const [currentScreen, setCurrentScreen] = useState(
     isAgency ? "dashboard" : "explore",
   );
+
+  // NEW: State to store the active trip ID when transitioning to the workspace/trips view
+  const [activeTripId, setActiveTripId] = useState(null);
 
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -58,15 +62,19 @@ export default function App() {
   function goToExplore() {
     setCurrentScreen("explore");
   }
+
   function goToDashboard() {
     setCurrentScreen("dashboard");
-  } // New handler
-
-  const displayName =
-    user?.user_metadata?.full_name || user?.email || "traveler";
+  }
 
   function goToTrips() {
     setCurrentScreen("trips");
+  }
+
+  // NEW: Handler called when Agency Dashboard creates or opens a trip
+  function openTripWorkspace(tripId) {
+    setActiveTripId(tripId);
+    setCurrentScreen("trips"); // Directs agency directly into the workspace/trips screen
   }
 
   function goToSmartMatch() {
@@ -166,9 +174,12 @@ export default function App() {
             onInquire={openInquiryChat}
           />
         ) : currentScreen === "dashboard" ? (
-          <AgencyDashboardScreen /> // Render her dashboard screen here
+          <AgencyDashboardScreen
+            onOpenTripWorkspace={openTripWorkspace} // <-- FIXED: Added missing callback prop!
+            onNavigateToChat={goToMessages}
+          />
         ) : currentScreen === "trips" ? (
-          <TripsScreen />
+          <TripsScreen initialTripId={activeTripId} /> // Pass activeTripId to auto-select newly created trip workspace
         ) : currentScreen === "smartmatch" ? (
           <AIChatScreen />
         ) : currentScreen === "chat" ? (
@@ -194,7 +205,7 @@ export default function App() {
         <BottomNav
           currentScreen={currentScreen}
           userType={isAgency ? "Agency" : "Traveler"}
-          onDashboard={goToDashboard} // Provide the agency click handler
+          onDashboard={goToDashboard}
           onExplore={goToExplore}
           onTrips={goToTrips}
           onSmartMatch={goToSmartMatch}
