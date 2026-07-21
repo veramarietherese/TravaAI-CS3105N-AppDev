@@ -7,34 +7,39 @@ import {
   LayoutDashboard,
 } from "lucide-react";
 
-import "./bottom-nav.css";
+import styles from "./BottomNav.module.css";
 
 export default function BottomNav({
   currentScreen,
-  userType, // Accepts "Agency" or "Traveler"
+  userType,
   onExplore,
   onTrips,
-  onDashboard, // Added callback handler for Agency
+  onDashboard,
   onSmartMatch,
   onMessages,
   onProfile,
   unreadMessages = 0,
 }) {
-  console.log("userType: ", userType);
-  const firstItem =
-    userType === "Agency"
-      ? {
-          key: "dashboard",
-          label: "Dashboard",
-          icon: LayoutDashboard,
-          onClick: onDashboard,
-        }
-      : {
-          key: "explore",
-          label: "Explore",
-          icon: Compass,
-          onClick: onExplore,
-        };
+  const normalizedUserType = String(userType || "")
+    .trim()
+    .toLowerCase();
+
+  const isAgency = normalizedUserType === "agency";
+
+  const firstItem = isAgency
+    ? {
+        key: "dashboard",
+        label: "Dashboard",
+        icon: LayoutDashboard,
+        onClick: onDashboard,
+      }
+    : {
+        key: "explore",
+        label: "Explore",
+        icon: Compass,
+        onClick: onExplore,
+      };
+
   const items = [
     firstItem,
     {
@@ -55,7 +60,7 @@ export default function BottomNav({
       label: "Messages",
       icon: MessageCircle,
       onClick: onMessages,
-      badge: unreadMessages,
+      badge: Number(unreadMessages) || 0,
     },
     {
       key: "profile",
@@ -66,41 +71,58 @@ export default function BottomNav({
   ];
 
   return (
-    <nav className="bottom-nav" aria-label="Main navigation">
+    <nav className={styles.nav} aria-label="Main navigation">
       {items.map((item) => {
         const Icon = item.icon;
         const isActive = currentScreen === item.key;
-        const hasBadge = item.key === "chat" && Number(item.badge) > 0;
+        const hasBadge =
+          item.key === "chat" && Number(item.badge) > 0;
+
+        const className = [
+          styles.item,
+          item.isAi ? styles.aiItem : "",
+          isActive ? styles.active : "",
+        ]
+          .filter(Boolean)
+          .join(" ");
+
+        const handleClick = () => {
+          if (typeof item.onClick === "function") {
+            item.onClick();
+          }
+        };
 
         return (
           <button
             key={item.key}
             type="button"
-            className={[
-              "bottom-nav-item",
-              isActive ? "active" : "",
-              item.isAi ? "ai-nav" : "",
-            ]
-              .filter(Boolean)
-              .join(" ")}
-            onClick={item.onClick}
+            className={className}
+            onClick={handleClick}
             aria-label={item.label}
             aria-current={isActive ? "page" : undefined}
           >
-            <span className="bottom-nav-icon">
+            <span className={styles.icon}>
               <Icon
-                size={item.isAi ? 24 : 21}
-                strokeWidth={item.isAi ? 2.5 : 2.2}
+                size={item.isAi ? 29 : 27}
+                strokeWidth={item.isAi ? 2.3 : 2.1}
+                aria-hidden="true"
               />
 
               {hasBadge && (
-                <span className="bottom-nav-badge">
+                <span className={styles.badge}>
                   {item.badge > 99 ? "99+" : item.badge}
                 </span>
               )}
             </span>
 
-            <span className="bottom-nav-label">{item.label}</span>
+            {item.isAi ? (
+              <span className={styles.aiLabel}>AI</span>
+            ) : (
+              <span
+                className={styles.indicator}
+                aria-hidden="true"
+              />
+            )}
           </button>
         );
       })}
