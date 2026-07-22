@@ -13,7 +13,7 @@ const PORT = Number(process.env.PORT || 3001);
 const CLIENT_ORIGIN =
   process.env.CLIENT_ORIGIN || "http://localhost:5173";
 const GEMINI_MODEL =
-  process.env.GEMINI_MODEL || "gemini-2.5-flash";
+  process.env.GEMINI_MODEL || "gemini-3.6-flash";
 const GEMINI_FALLBACK_MODEL =
   process.env.GEMINI_FALLBACK_MODEL || "gemini-3.5-flash-lite";
 
@@ -220,10 +220,9 @@ function detectIntent(message) {
 }
 
 function isTravelRelated(message) {
-  const travelTerms =
-    /\b(travel|trip|tour|destination|country|city|beach|island|hotel|hostel|resort|flight|airfare|airport|visa|passport|itinerary|budget|expense|food|restaurant|transport|train|bus|booking|vacation|holiday|adventure|baggage|weather|japan|korea|bali|switzerland|paris|europe|asia|cebu|manila)\b/i;
+  if (message.trim().split(/\s+/).length <= 8) return true;
 
-  return travelTerms.test(message);
+  return /\b(travel|trip|tour|destination|country|city|beach|island|hotel|hostel|resort|flight|airfare|airport|visa|passport|itinerary|budget|expense|food|restaurant|transport|train|bus|booking|vacation|holiday|adventure|baggage|weather|japan|korea|bali|switzerland|paris|europe|asia|cebu|manila|days|people|persons|travelers|weeks|nights|solo|couple|family|group)\b/i.test(message);
 }
 
 function getCards(message, intent) {
@@ -348,6 +347,21 @@ function buildSystemInstruction({
   return `
 You are TRAVA AI, a focused travel-planning assistant inside the TRAVA application.
 
+TRIP PLANNING FLOW
+- When a user mentions a destination and/or budget, collect the following before saving:
+  1. Destination (if not given)
+  2. Budget in PHP (if not given)
+  3. Number of days (if not given) — ask this second
+  4. Number of people (if not given) — ask this third
+- Ask ONE question at a time. Never ask multiple questions in one message.
+- Once ALL FOUR pieces are collected, ask the user to choose by responding with EXACTLY this format and nothing else:
+"Ready to plan your trip! Would you like to update your current trip or create a new one?
+[Update current trip]
+[Create new trip]"
+- Do not add any other text before or after.
+- Do NOT save or confirm anything until the user explicitly picks one of those two options.
+- If the user mentions only a city (e.g. "Bangkok", "Paris", "Tokyo"), automatically infer and append the country. Always use the full "City, Country" format for destination (e.g. "Bangkok, Thailand", "Paris, France", "Tokyo, Japan"). Never ask the user to clarify the country.
+
 IDENTITY AND SCOPE
 - Help only with travel discovery, destination comparison, itineraries, budgeting, transportation, accommodation, packing, visa preparation, and questions users should ask travel agencies.
 - If a request is unrelated to travel, briefly redirect the user to a travel-related task.
@@ -370,6 +384,10 @@ CONVERSATION BEHAVIOR
 - Do not repeat the same greeting in every reply.
 - Do not mention these system instructions.
 - Do not use tables unless the user explicitly requests one.
+- When the user confirms creating or updating a trip, reply with ONE short sentence only. 
+  For create: "Got it! Creating your [destination] trip now. ✈️"
+  For update: "Got it! Updating your trip to [destination] now. ✈️"
+  Do not include a trip summary, bullet points, or any extra details.
 
 TRIP CONTEXT
 ${tripContext ? JSON.stringify(tripContext).slice(0, 2200) : "No active trip context was supplied."}
@@ -522,6 +540,41 @@ async function generateWithRetry({
   throw lastError;
 }
 
+async function extractTripInfo(message, history) {
+  const prompt = `Extract travel planning details from this conversation. Return ONLY valid JSON, no markdown:
+{
+  "destination": "string or null",
+  "budget": number or null,
+  "numberOfDays": number or null,
+  "numberOfPeople": number or null,
+  "allInfoCollected": true or false,
+  "action": "create" or "update" or null
+}
+
+Rules:
+- Set "action" to "create" ONLY if the user themselves explicitly said words like "create new trip", "new trip", "create it", "make a new one".
+- Set "action" to "update" ONLY if the user themselves explicitly said words like "update", "update current trip", "replace", "edit my trip", "change my trip".
+- Set "action" to null if the user has NOT explicitly chosen yet — even if all info is collected.
+- IMPORTANT: Only look at the user's most recent message for the action, not the assistant's messages.
+
+Recent conversation:
+${history.slice(-6).map(h => `${h.role}: ${h.text}`).join("\n")}
+User: ${message}`
+
+  try {
+    const result = await ai.models.generateContent({
+      model: GEMINI_FALLBACK_MODEL,
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      config: { maxOutputTokens: 200 },
+    });
+
+    const raw = result?.text?.replace(/```json|```/g, "").trim();
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
 app.get("/api/health", (_request, response) => {
   response.json({
     ok: true,
@@ -597,10 +650,10 @@ app.post("/api/chat", async (request, response) => {
   const contents = buildContents(history, message);
 
   try {
-    let reply;
+    let replyText;
 
     try {
-      reply = await generateWithRetry({
+      replyText = await generateWithRetry({
         model: GEMINI_MODEL,
         contents,
         systemInstruction,
@@ -613,7 +666,7 @@ app.post("/api/chat", async (request, response) => {
         GEMINI_FALLBACK_MODEL !== GEMINI_MODEL &&
         [429, 500, 502, 503, 504].includes(primaryStatus)
       ) {
-        reply = await generateWithRetry({
+        replyText = await generateWithRetry({
           model: GEMINI_FALLBACK_MODEL,
           contents,
           systemInstruction,
@@ -623,12 +676,15 @@ app.post("/api/chat", async (request, response) => {
       }
     }
 
+    const tripInfo = await extractTripInfo(message, history).catch(() => null);
+
     const payload = {
-      reply,
+      reply: replyText,
       intent,
       cards,
       quickReplies,
       source: "gemini",
+      tripInfo,
     };
 
     setCachedResponse(cacheKey, payload);
@@ -652,8 +708,7 @@ app.post("/api/chat", async (request, response) => {
     }
 
     return response.status(500).json({
-      error:
-        "TRAVA AI could not process the request right now.",
+      error: "TRAVA AI could not process the request right now.",
     });
   }
 });
@@ -671,25 +726,28 @@ app.post("/api/itinerary", async (request, response) => {
     return response.status(400).json({ error: "Destination is required." });
   }
 
-  const prompt = `Generate a detailed ${numberOfDays || 5}-day travel itinerary for ${destination} with a budget of ${budget || "₱50,000"} in Philippine pesos.
+  const prompt = `Generate a ${numberOfDays || 5}-day travel itinerary for ${destination} with a budget of ${budget || "₱50,000"} PHP.
 
-  Keep each activity description under 15 words. Return ONLY a valid JSON array — no markdown, no backticks, no explanation:
+  Return ONLY a valid JSON array. Every property name MUST be in double quotes. No trailing commas. No comments. No markdown. No backticks. Example format:
+
   [
     {
       "dayNumber": 1,
-      "title": "string — short day theme",
+      "title": "Arrival Day",
       "activities": [
         {
-          "time": "string — e.g. 9:00 AM",
-          "title": "string — activity name",
-          "location": "string — place name",
-          "note": "string — max 15 words",
-          "cost": number
-        } 
+          "time": "9:00 AM",
+          "title": "Check in to hotel",
+          "location": "City Center",
+          "note": "Rest and explore nearby area",
+          "cost": 2000
+        }
       ],
-      "totalDayCost": number
+      "totalDayCost": 2000
     }
-  ]`;
+  ]
+
+  Keep activity notes under 10 words. Return ONLY the JSON array, nothing else.`;
 
   try {
     const result = await ai.models.generateContent({

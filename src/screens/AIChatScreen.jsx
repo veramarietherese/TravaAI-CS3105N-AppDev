@@ -319,38 +319,36 @@ export default function AIChatScreen({
   const recognitionRef = useRef(null);
 
   useEffect(() => {
-    async function fetchLatestTrip() {
-      if (!user?.id) return;
-
-      const stored = localStorage.getItem("trava-active-trip-id");
-
-      let query = supabase.from("trips").select("trip_id, total_budget");
-
-      if (stored) {
-        query = query.eq("trip_id", stored);
-      } else {
-        query = query
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(1);
-      }
-
-      const { data, error } = await query.single();
-
-      if (error) {
-        console.error("Supabase trip fetch error:", error.message);
-        return;
-      }
-
-      if (data) {
-        setActiveTripId(data.trip_id);
-        if (data.total_budget) {
-          setUserBudget(data.total_budget);
-        }
-      }
+  console.log("fetchLatestTrip useEffect — user?.id:", user?.id);
+  async function fetchLatestTrip() {
+    const stored = localStorage.getItem("trava-active-trip-id");
+    if (stored) {
+      setActiveTripId(stored);
+      return;
     }
 
-    fetchLatestTrip();
+    if (!user?.id) return;
+
+    const { data, error } = await supabase
+      .from("trips")
+      .select("trip_id, total_budget")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (error) {
+      console.error("Supabase trip fetch error:", error.message);
+      return;
+    }
+
+    if (data) {
+      setActiveTripId(data.trip_id);
+      if (data.total_budget) setUserBudget(data.total_budget);
+    }
+  }
+
+  fetchLatestTrip();
   }, [user?.id]);
 
 function handleSelectCreateTrip() {
@@ -491,6 +489,22 @@ async function handleModalConfirm(editedPrompt) {
 }
 
 async function generateAndSaveItinerary(tripId, destination, numberOfDays, budget) {
+  const { data: { session } } = await supabase.auth.getSession();
+  console.log("session in generateAndSaveItinerary:", session?.user?.id);
+
+  const { data: tripCheck, error: tripError } = await supabase
+    .from("trips")
+    .select("trip_id")
+    .eq("trip_id", tripId)
+    .single();
+
+  console.log("trip check:", tripCheck, tripError?.message);
+
+  if (!tripCheck) {
+    console.error("Trip not found — itinerary save aborted");
+    return;
+  }
+  
   try {
     const res = await fetch("/api/itinerary", {
       method: "POST",
@@ -553,6 +567,7 @@ function handleModalCancel() {
 }
 
 function handleOverwriteConfirm() {
+  console.log("handleOverwriteConfirm called — pendingItineraryArgs:", pendingItineraryArgs);
   setOverwriteModalOpen(false);
   if (pendingItineraryArgs) {
     generateAndSaveItinerary(
@@ -741,6 +756,90 @@ async function sendMessage(rawMessage = input, extraMessages = [], skipApi = fal
       setNotice(
         "Gemini is temporarily busy, so TRAVA used a lightweight travel fallback.",
       );
+    }
+
+    if (payload?.tripInfo?.allInfoCollected &&(payload?.tripInfo?.action === "create" || payload?.tripInfo?.action === "update")) {
+      const { destination, budget, numberOfDays, numberOfPeople, action } = payload.tripInfo;
+      console.log("action:", payload.tripInfo.action, "activeTripId:", activeTripId);
+
+      try {
+        if (action === "update" && activeTripId) {
+          const { error } = await supabase
+            .from("trips")
+            .update({
+              destination,
+              ...(budget && { total_budget: budget }),
+              ...(numberOfDays && { number_of_days: numberOfDays }),
+            })
+            .eq("trip_id", activeTripId);
+
+          console.log("supabase update error:", error);
+
+          setPendingItineraryArgs({
+            tripId: activeTripId,
+            destination,
+            numberOfDays: numberOfDays || 5,
+            budget: budget ? `₱${budget.toLocaleString()}` : null,
+          });
+          console.log("pendingItineraryArgs set, opening modal...");
+          setTimeout(() => { 
+            console.log("setTimeout fired, overwriteModalOpen should be true");
+            setOverwriteModalOpen(true) }
+            , 50);
+        } else if (action === "create") {
+          // ... create path
+        }
+      } catch (tripErr) {
+        console.error("trip save error:", tripErr);
+      }
+
+      if (action === "update" && activeTripId) {
+        await supabase
+          .from("trips")
+          .update({
+            destination,
+            ...(budget && { total_budget: budget }),
+            ...(numberOfDays && { number_of_days: numberOfDays }),
+          })
+          .eq("trip_id", activeTripId);
+        
+        console.log("update error:", error);
+
+        setPendingItineraryArgs({
+          tripId: activeTripId,
+          destination,
+          numberOfDays: numberOfDays || 5,
+          budget: budget ? `₱${budget.toLocaleString()}` : null,
+        });
+        setOverwriteModalOpen(true);
+
+      } else if (action === "create") {
+        const { data, error } = await supabase
+          .from("trips")
+          .insert([{
+            user_id: user.id,
+            destination,
+            number_of_days: numberOfDays || 5,
+            travel_group: numberOfPeople > 1 ? "Group" : "Solo",
+            trip_name: `${destination} Trip`,
+            start_date: null,
+            end_date: null,
+            total_budget: budget || null,
+          }])
+          .select("trip_id")
+          .single();
+
+        if (!error && data) {
+          setActiveTripId(data.trip_id);
+          localStorage.setItem("trava-active-trip-id", data.trip_id);
+          generateAndSaveItinerary(
+            data.trip_id,
+            destination,
+            numberOfDays || 5,
+            budget ? `₱${budget.toLocaleString()}` : null,
+          );
+        }
+      }
     }
   } catch (error) {
     if (error?.name === "AbortError") {
