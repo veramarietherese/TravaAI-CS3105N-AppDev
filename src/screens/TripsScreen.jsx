@@ -9,6 +9,7 @@ import {
 import {
   ArrowLeft,
   BadgeCheck,
+  Bell,
   BaggageClaim,
   Bot,
   CalendarDays,
@@ -38,7 +39,9 @@ import {
   TicketCheck,
   Trash2,
   Upload,
+  UserCheck,
   UserRoundPlus,
+  UserX,
   UsersRound,
   WalletCards,
   X,
@@ -195,6 +198,56 @@ function getInitials(name = "") {
       .join("")
       .toUpperCase() || "TR"
   );
+}
+
+function TripPersonAvatar({ person, className = "" }) {
+  const name = person?.full_name || person?.email || "Traveler";
+
+  return (
+    <span className={`trip-person-avatar ${className}`.trim()} title={name}>
+      {person?.profile_picture_url ? (
+        <img src={person.profile_picture_url} alt={name} />
+      ) : (
+        getInitials(name)
+      )}
+    </span>
+  );
+}
+
+function normalizeMembershipStatus(value = "") {
+  return String(value).trim().toLowerCase();
+}
+
+function isAcceptedMembership(value) {
+  return ["accepted", "joined"].includes(
+    normalizeMembershipStatus(value),
+  );
+}
+
+function escapePostgrestSearch(value = "") {
+  return String(value)
+    .replaceAll("\\", "\\\\")
+    .replaceAll("%", "\\%")
+    .replaceAll("_", "\\_")
+    .replaceAll(",", " ")
+    .trim();
+}
+
+function formatNotificationTime(value) {
+  if (!value) return "Just now";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Just now";
+
+  const seconds = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
+  if (seconds < 60) return "Just now";
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+
+  return date.toLocaleDateString("en-PH", {
+    month: "short",
+    day: "numeric",
+  });
 }
 
 function formatCompactCurrency(value) {
@@ -692,6 +745,10 @@ export default function TripsScreen() {
   );
   const [savingItinerary, setSavingItinerary] = useState(false);
   const [error, setError] = useState("");
+  const [collaborationOpen, setCollaborationOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
 
   const itinerarySaveTimer = useRef(null);
   const tripsInitializedRef = useRef(false);
@@ -781,6 +838,74 @@ export default function TripsScreen() {
     return sessionUser;
   }, [contextUser]);
 
+  const loadNotifications = useCallback(async () => {
+    const authenticatedUser = await resolveActiveUser();
+    setLoadingNotifications(true);
+
+    try {
+      const { data, error: notificationError } = await supabase
+        .from("trip_notifications")
+        .select(
+          "notification_id,recipient_id,actor_id,trip_id,membership_id,type,title,message,is_read,created_at",
+        )
+        .eq("recipient_id", authenticatedUser.id)
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      if (notificationError) throw notificationError;
+      setNotifications(data || []);
+    } catch (notificationError) {
+      console.error("Trip notification load error:", notificationError);
+      setError(getErrorMessage(notificationError));
+    } finally {
+      setLoadingNotifications(false);
+    }
+  }, [resolveActiveUser]);
+
+  async function markNotificationRead(notificationId) {
+    if (!notificationId) return;
+
+    setNotifications((current) =>
+      current.map((notification) =>
+        notification.notification_id === notificationId
+          ? { ...notification, is_read: true }
+          : notification,
+      ),
+    );
+
+    const { error: updateError } = await supabase
+      .from("trip_notifications")
+      .update({ is_read: true })
+      .eq("notification_id", notificationId);
+
+    if (updateError) {
+      setError(getErrorMessage(updateError));
+      loadNotifications();
+    }
+  }
+
+  async function respondToInvitation(notification, nextStatus) {
+    if (!notification?.membership_id) return;
+
+    setError("");
+
+    const { error: membershipError } = await supabase
+      .from("trip_members")
+      .update({
+        status: nextStatus,
+        responded_at: new Date().toISOString(),
+      })
+      .eq("member_id", notification.membership_id);
+
+    if (membershipError) {
+      setError(getErrorMessage(membershipError));
+      return;
+    }
+
+    await markNotificationRead(notification.notification_id);
+    await Promise.all([loadTrips(), loadNotifications()]);
+  }
+
   const loadTrips = useCallback(
     async ({ showLoader = false } = {}) => {
       if (showLoader) setLoadingTrips(true);
@@ -805,11 +930,69 @@ export default function TripsScreen() {
 
         if (tripsError) throw tripsError;
 
-        const remoteTrips = (data || []).map((trip) => ({
-          ...trip,
-          total_spent: Number(trip.total_spent || 0),
-          accepted_members: trip.accepted_members || [],
-        }));
+        const tripRows = data || [];
+        const tripIds = tripRows.map((trip) => trip.trip_id);
+        let memberships = [];
+        let peopleById = {};
+
+        if (tripIds.length) {
+          const { data: membershipRows, error: membershipError } =
+            await supabase
+              .from("trip_members")
+              .select(
+                "member_id,trip_id,user_id,status,invited_by,created_at,responded_at",
+              )
+              .in("trip_id", tripIds);
+
+          if (membershipError) throw membershipError;
+          memberships = membershipRows || [];
+
+          const personIds = [
+            ...new Set(
+              memberships.map((membership) => membership.user_id),
+            ),
+          ].filter(Boolean);
+
+          if (personIds.length) {
+            const { data: peopleRows, error: peopleError } = await supabase
+              .from("users")
+              .select("user_id,full_name,email,profile_picture_url")
+              .in("user_id", personIds);
+
+            if (peopleError) throw peopleError;
+            peopleById = Object.fromEntries(
+              (peopleRows || []).map((person) => [person.user_id, person]),
+            );
+          }
+        }
+
+        const remoteTrips = tripRows.map((trip) => {
+          const tripMemberships = memberships.filter(
+            (membership) => membership.trip_id === trip.trip_id,
+          );
+
+          return {
+            ...trip,
+            total_spent: Number(trip.total_spent || 0),
+            accepted_members: tripMemberships
+              .filter((membership) =>
+                isAcceptedMembership(membership.status),
+              )
+              .map((membership) => ({
+                ...membership,
+                person: peopleById[membership.user_id] || null,
+              })),
+            pending_members: tripMemberships
+              .filter(
+                (membership) =>
+                  normalizeMembershipStatus(membership.status) === "pending",
+              )
+              .map((membership) => ({
+                ...membership,
+                person: peopleById[membership.user_id] || null,
+              })),
+          };
+        });
 
         // Never replace a known-good cache with an unexpected empty result.
         const nextTrips =
@@ -891,6 +1074,48 @@ export default function TripsScreen() {
   }, [authLoading, resolveActiveUser, loadTrips]);
 
   useEffect(() => {
+    if (authLoading) return;
+
+    loadNotifications();
+  }, [authLoading, loadNotifications]);
+
+  useEffect(() => {
+    if (!activeUser?.id) return undefined;
+
+    const channel = supabase
+      .channel(`trips-realtime:${activeUser.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "trip_members",
+        },
+        () => {
+          loadTrips();
+          loadNotifications();
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "trip_notifications",
+          filter: `recipient_id=eq.${activeUser.id}`,
+        },
+        () => {
+          loadNotifications();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [activeUser?.id, loadNotifications, loadTrips]);
+
+  useEffect(() => {
     if (selectedTripId) {
       sessionStorage.setItem(
         "trava-selected-trip-id",
@@ -970,8 +1195,6 @@ export default function TripsScreen() {
         : "Overview",
     );
     setMenuOpen(false);
-
-    localStorage.setItem("trava-active-trip-id", tripId);
   }
 
   function closeTrip() {
@@ -1302,6 +1525,15 @@ export default function TripsScreen() {
               showLoader: true,
             })
           }
+          notifications={notifications}
+          loadingNotifications={loadingNotifications}
+          notificationsOpen={notificationsOpen}
+          onToggleNotifications={() =>
+            setNotificationsOpen((current) => !current)
+          }
+          onCloseNotifications={() => setNotificationsOpen(false)}
+          onMarkNotificationRead={markNotificationRead}
+          onRespondInvitation={respondToInvitation}
         />
 
         {error && (
@@ -1344,18 +1576,57 @@ export default function TripsScreen() {
           {selectedTrip.trip_name || selectedTrip.destination}
         </h1>
 
-        <div className="trip-options-wrap">
-          <button
-            className="trip-icon-btn"
-            type="button"
-            onClick={() => setMenuOpen((current) => !current)}
-            aria-label="Trip options"
-          >
-            <MoreHorizontal size={22} />
-          </button>
+        <div className="trip-header-actions">
+          {selectedTrip.user_id === activeUser?.id && (
+            <button
+              className="trip-icon-btn"
+              type="button"
+              onClick={() => setCollaborationOpen(true)}
+              aria-label="Invite travelers"
+              title="Invite travelers"
+            >
+              <UserRoundPlus size={19} />
+            </button>
+          )}
 
-          {menuOpen && (
-            <div className="trip-options-menu">
+          <div className="trip-notification-wrap">
+            <button
+              className="trip-icon-btn"
+              type="button"
+              onClick={() =>
+                setNotificationsOpen((current) => !current)
+              }
+              aria-label="Trip notifications"
+            >
+              <Bell size={19} />
+              {notifications.some((item) => !item.is_read) && (
+                <span className="trip-notification-dot" />
+              )}
+            </button>
+
+            {notificationsOpen && (
+              <TripNotificationPanel
+                notifications={notifications}
+                loading={loadingNotifications}
+                onClose={() => setNotificationsOpen(false)}
+                onRead={markNotificationRead}
+                onRespond={respondToInvitation}
+              />
+            )}
+          </div>
+
+          <div className="trip-options-wrap">
+            <button
+              className="trip-icon-btn"
+              type="button"
+              onClick={() => setMenuOpen((current) => !current)}
+              aria-label="Trip options"
+            >
+              <MoreHorizontal size={22} />
+            </button>
+
+            {menuOpen && (
+              <div className="trip-options-menu">
               <button type="button" onClick={openEditTrip}>
                 <Edit3 size={16} />
                 Edit trip
@@ -1369,8 +1640,9 @@ export default function TripsScreen() {
                 <Trash2 size={16} />
                 Delete trip
               </button>
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
@@ -1393,6 +1665,8 @@ export default function TripsScreen() {
           onQuickOpen={setActiveTab}
           onEditTrip={openEditTrip}
           onCompletePlanning={() => setPlanningModalOpen(true)}
+          onManageCollaborators={() => setCollaborationOpen(true)}
+          canManageCollaborators={selectedTrip.user_id === activeUser?.id}
         />
       )}
 
@@ -1408,7 +1682,6 @@ export default function TripsScreen() {
           <TripItinerary
             itinerary={itinerary}
             onChange={handleItineraryChange}
-            destination={selectedTrip?.destination || ""}
           />
         </div>
       )}
@@ -1446,6 +1719,18 @@ export default function TripsScreen() {
             handleTripPatched(updatedFields);
             setPlanningModalOpen(false);
           }}
+        />
+      )}
+
+      {collaborationOpen && selectedTrip && (
+        <TripCollaborationModal
+          trip={selectedTrip}
+          currentUser={activeUser}
+          onClose={() => setCollaborationOpen(false)}
+          onChanged={async () => {
+            await Promise.all([loadTrips(), loadNotifications()]);
+          }}
+          onError={(message) => setError(message)}
         />
       )}
 
@@ -1490,6 +1775,13 @@ function TripsLanding({
   onCreateTrip,
   onTripUpdated,
   onRetry,
+  notifications,
+  loadingNotifications,
+  notificationsOpen,
+  onToggleNotifications,
+  onCloseNotifications,
+  onMarkNotificationRead,
+  onRespondInvitation,
 }) {
   const [filterOpen, setFilterOpen] = useState(false);
   const [showAllUpcoming, setShowAllUpcoming] = useState(false);
@@ -1523,14 +1815,42 @@ function TripsLanding({
           <h1>My Trips</h1>
         </div>
 
-        <button
-          type="button"
-          className="trips-add-button"
-          onClick={onCreateTrip}
-        >
-          <Plus size={19} />
-          New Trip
-        </button>
+        <div className="trips-heading-actions">
+          <div className="trip-notification-wrap">
+            <button
+              type="button"
+              className="trips-notification-button"
+              onClick={onToggleNotifications}
+              aria-label="Trip notifications"
+            >
+              <Bell size={19} />
+              {notifications.some((item) => !item.is_read) && (
+                <span className="trip-notification-count">
+                  {Math.min(99, notifications.filter((item) => !item.is_read).length)}
+                </span>
+              )}
+            </button>
+
+            {notificationsOpen && (
+              <TripNotificationPanel
+                notifications={notifications}
+                loading={loadingNotifications}
+                onClose={onCloseNotifications}
+                onRead={onMarkNotificationRead}
+                onRespond={onRespondInvitation}
+              />
+            )}
+          </div>
+
+          <button
+            type="button"
+            className="trips-add-button"
+            onClick={onCreateTrip}
+          >
+            <Plus size={19} />
+            New Trip
+          </button>
+        </div>
       </header>
 
       <div className="trips-search-wrap">
@@ -2367,7 +2687,14 @@ function UpcomingTripCard({ trip, onOpen }) {
   );
 }
 
-function TripOverview({ trip, onQuickOpen, onEditTrip, onCompletePlanning }) {
+function TripOverview({
+  trip,
+  onQuickOpen,
+  onEditTrip,
+  onCompletePlanning,
+  onManageCollaborators,
+  canManageCollaborators,
+}) {
   const totalBudget = Number(trip.total_budget || 0);
   const totalSpent = Number(trip.total_spent || 0);
 
@@ -2469,9 +2796,16 @@ function TripOverview({ trip, onQuickOpen, onEditTrip, onCompletePlanning }) {
             </p>
           </section>
 
-          <button type="button" onClick={onEditTrip}>
+          <button
+            type="button"
+            onClick={
+              canManageCollaborators
+                ? onManageCollaborators
+                : onEditTrip
+            }
+          >
             <UsersRound size={16} />
-            Manage
+            {canManageCollaborators ? "Invite" : "View"}
           </button>
         </div>
       </section>
@@ -4055,6 +4389,369 @@ function ChecklistScreen({ tripId }) {
         </div>
       )}
     </section>
+  );
+}
+
+function TripNotificationPanel({
+  notifications,
+  loading,
+  onClose,
+  onRead,
+  onRespond,
+}) {
+  return (
+    <aside className="trip-notification-panel" aria-label="Trip notifications">
+      <header>
+        <div>
+          <strong>Notifications</strong>
+          <span>Trip invitations and collaboration updates</span>
+        </div>
+
+        <button type="button" onClick={onClose} aria-label="Close notifications">
+          <X size={17} />
+        </button>
+      </header>
+
+      {loading ? (
+        <div className="trip-notification-empty">
+          <LoaderCircle className="spin" size={21} />
+          Loading notifications
+        </div>
+      ) : notifications.length ? (
+        <div className="trip-notification-list">
+          {notifications.map((notification) => {
+            const isInvitation = notification.type === "trip_invitation";
+
+            return (
+              <article
+                key={notification.notification_id}
+                className={notification.is_read ? "" : "unread"}
+                onClick={() => {
+                  if (!isInvitation) {
+                    onRead(notification.notification_id);
+                  }
+                }}
+              >
+                <span className="trip-notification-icon">
+                  {isInvitation ? (
+                    <UserRoundPlus size={17} />
+                  ) : (
+                    <Bell size={17} />
+                  )}
+                </span>
+
+                <div>
+                  <strong>{notification.title}</strong>
+                  <p>{notification.message}</p>
+                  <small>{formatNotificationTime(notification.created_at)}</small>
+
+                  {isInvitation && !notification.is_read && (
+                    <div className="trip-invitation-actions">
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onRespond(notification, "accepted");
+                        }}
+                      >
+                        <UserCheck size={15} />
+                        Accept
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onRespond(notification, "declined");
+                        }}
+                      >
+                        <UserX size={15} />
+                        Decline
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="trip-notification-empty">
+          <Bell size={22} />
+          No trip notifications yet
+        </div>
+      )}
+    </aside>
+  );
+}
+
+function TripCollaborationModal({
+  trip,
+  currentUser,
+  onClose,
+  onChanged,
+  onError,
+}) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
+  const [memberships, setMemberships] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searching, setSearching] = useState(false);
+  const [workingUserId, setWorkingUserId] = useState(null);
+  const searchTimer = useRef(null);
+
+  const loadMembers = useCallback(async () => {
+    setLoading(true);
+
+    try {
+      const { data: membershipRows, error: membershipError } = await supabase
+        .from("trip_members")
+        .select(
+          "member_id,trip_id,user_id,status,invited_by,created_at,responded_at",
+        )
+        .eq("trip_id", trip.trip_id)
+        .order("created_at", { ascending: true });
+
+      if (membershipError) throw membershipError;
+
+      const userIds = (membershipRows || [])
+        .map((membership) => membership.user_id)
+        .filter(Boolean);
+      let peopleById = {};
+
+      if (userIds.length) {
+        const { data: peopleRows, error: peopleError } = await supabase
+          .from("users")
+          .select("user_id,full_name,email,profile_picture_url")
+          .in("user_id", userIds);
+
+        if (peopleError) throw peopleError;
+        peopleById = Object.fromEntries(
+          (peopleRows || []).map((person) => [person.user_id, person]),
+        );
+      }
+
+      setMemberships(
+        (membershipRows || []).map((membership) => ({
+          ...membership,
+          person: peopleById[membership.user_id] || null,
+        })),
+      );
+    } catch (loadError) {
+      onError(getErrorMessage(loadError));
+    } finally {
+      setLoading(false);
+    }
+  }, [onError, trip.trip_id]);
+
+  useEffect(() => {
+    loadMembers();
+  }, [loadMembers]);
+
+  useEffect(() => {
+    window.clearTimeout(searchTimer.current);
+
+    const normalizedQuery = escapePostgrestSearch(query);
+
+    if (normalizedQuery.length < 2) {
+      setResults([]);
+      setSearching(false);
+      return undefined;
+    }
+
+    searchTimer.current = window.setTimeout(async () => {
+      setSearching(true);
+
+      try {
+        const pattern = `*${normalizedQuery}*`;
+        const { data, error: searchError } = await supabase
+          .from("users")
+          .select("user_id,full_name,email,profile_picture_url")
+          .or(`full_name.ilike.${pattern},email.ilike.${pattern}`)
+          .neq("user_id", currentUser.id)
+          .limit(12);
+
+        if (searchError) throw searchError;
+
+        const existingIds = new Set(
+          memberships.map((membership) => membership.user_id),
+        );
+
+        setResults(
+          (data || []).filter(
+            (person) =>
+              person.user_id !== trip.user_id &&
+              !existingIds.has(person.user_id),
+          ),
+        );
+      } catch (searchError) {
+        onError(getErrorMessage(searchError));
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
+
+    return () => window.clearTimeout(searchTimer.current);
+  }, [currentUser.id, memberships, onError, query, trip.user_id]);
+
+  async function invitePerson(person) {
+    setWorkingUserId(person.user_id);
+
+    try {
+      const { error: inviteError } = await supabase
+        .from("trip_members")
+        .upsert(
+          {
+            trip_id: trip.trip_id,
+            user_id: person.user_id,
+            invited_by: currentUser.id,
+            status: "Pending",
+            responded_at: null,
+          },
+          { onConflict: "trip_id,user_id" },
+        );
+
+      if (inviteError) throw inviteError;
+
+      setQuery("");
+      setResults([]);
+      await loadMembers();
+      await onChanged();
+    } catch (inviteError) {
+      onError(getErrorMessage(inviteError));
+    } finally {
+      setWorkingUserId(null);
+    }
+  }
+
+  async function removeMembership(membership) {
+    const confirmed = window.confirm(
+      `Remove ${membership.person?.full_name || membership.person?.email || "this traveler"} from this trip?`,
+    );
+
+    if (!confirmed) return;
+    setWorkingUserId(membership.user_id);
+
+    try {
+      const { error: removeError } = await supabase
+        .from("trip_members")
+        .delete()
+        .eq("member_id", membership.member_id);
+
+      if (removeError) throw removeError;
+      await loadMembers();
+      await onChanged();
+    } catch (removeError) {
+      onError(getErrorMessage(removeError));
+    } finally {
+      setWorkingUserId(null);
+    }
+  }
+
+  return (
+    <div className="trip-form-backdrop" onMouseDown={onClose}>
+      <section
+        className="trip-collaboration-modal"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <header>
+          <div>
+            <span>TRIP COLLABORATION</span>
+            <h2>Invite travelers</h2>
+            <p>Search registered TRAVA users by their full name or email.</p>
+          </div>
+
+          <button type="button" onClick={onClose}>
+            <X size={19} />
+          </button>
+        </header>
+
+        <div className="trip-collaboration-search">
+          <Search size={18} />
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search a traveler by name or email"
+            autoFocus
+          />
+          {searching && <LoaderCircle className="spin" size={17} />}
+        </div>
+
+        {query.trim().length >= 2 && (
+          <div className="trip-user-search-results">
+            {results.length ? (
+              results.map((person) => (
+                <article key={person.user_id}>
+                  <TripPersonAvatar person={person} />
+                  <div>
+                    <strong>{person.full_name || "TRAVA traveler"}</strong>
+                    <span>{person.email}</span>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={workingUserId === person.user_id}
+                    onClick={() => invitePerson(person)}
+                  >
+                    {workingUserId === person.user_id ? (
+                      <LoaderCircle className="spin" size={15} />
+                    ) : (
+                      <UserRoundPlus size={15} />
+                    )}
+                    Invite
+                  </button>
+                </article>
+              ))
+            ) : !searching ? (
+              <p>No registered traveler matches this search.</p>
+            ) : null}
+          </div>
+        )}
+
+        <div className="trip-collaboration-members">
+          <div className="trip-collaboration-section-title">
+            <strong>Collaborators</strong>
+            <span>{memberships.length}</span>
+          </div>
+
+          {loading ? (
+            <div className="trip-collaboration-empty">
+              <LoaderCircle className="spin" size={20} />
+              Loading collaborators
+            </div>
+          ) : memberships.length ? (
+            memberships.map((membership) => (
+              <article key={membership.member_id}>
+                <TripPersonAvatar person={membership.person} />
+                <div>
+                  <strong>
+                    {membership.person?.full_name ||
+                      membership.person?.email ||
+                      "TRAVA traveler"}
+                  </strong>
+                  <span>{membership.person?.email}</span>
+                </div>
+                <em className={`status-${normalizeMembershipStatus(membership.status)}`}>
+                  {normalizeMembershipStatus(membership.status) || "pending"}
+                </em>
+                <button
+                  type="button"
+                  disabled={workingUserId === membership.user_id}
+                  onClick={() => removeMembership(membership)}
+                  aria-label="Remove collaborator"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </article>
+            ))
+          ) : (
+            <div className="trip-collaboration-empty">
+              <UsersRound size={22} />
+              No collaborators invited yet
+            </div>
+          )}
+        </div>
+      </section>
+    </div>
   );
 }
 
